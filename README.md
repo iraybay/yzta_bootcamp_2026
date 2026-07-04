@@ -4,9 +4,13 @@
 
 **Takım Üyeleri ve Rolleri**
 Muhammed Furkan Koruyan (Product Owner/Developer) - [https://github.com/muhammedkoruyan] | [https://www.linkedin.com/in/muhammedkoruyan/]
+
 İrem Aybüke Bayburtluoğlu (Scrum Master/Developer) - [https://github.com/iraybay] | [https://www.linkedin.com/in/irem-aybuke-bayburtluoglu/]
+
 Ziya İpek (Developer) - [https://github.com/ziyaipek] | [https://www.linkedin.com/in/ziya-ipek/]
+
 Nisa Çibik (Developer) - [https://github.com/nisacibik] | [https://www.linkedin.com/in/nisacibik/]
+
 Merve Bayezit (Developer) - [https://www.linkedin.com/in/merve-bayezit/] | [https://github.com/Mervebayezit]
 
 ### 📝 Proje Tanıtımı
