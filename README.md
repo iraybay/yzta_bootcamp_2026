@@ -1,8 +1,10 @@
 # Yapay Zeka ve Teknoloji Akademisi 2026 Bootcamp
 ### 👥 Takım Bilgileri
+
 **Takım Adı: Takım 42**
 
 **Takım Üyeleri ve Rolleri**
+
 Muhammed Furkan Koruyan (Product Owner/Developer) - [https://github.com/muhammedkoruyan] | [https://www.linkedin.com/in/muhammedkoruyan/]
 
 İrem Aybüke Bayburtluoğlu (Scrum Master/Developer) - [https://github.com/iraybay] | [https://www.linkedin.com/in/irem-aybuke-bayburtluoglu/]
