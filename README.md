@@ -77,7 +77,7 @@ Sprint 1 sonunda yapılan değerlendirmeler sonucunda ekip, KOBİ'lere yönelik 
 ### 1. Product Backlog
 Sprint 2 boyunca tüm iş takibimizi, süreç yönetimimizi ve ekip arasındaki görev paylaşımını dijital Scrum panomuz (Kanban Board) üzerinden yürüttük. Süreç yönetimini şeffaf hale getirmek adına kullanıcı hikayelerini (User Stories - Mavi) ve teknik alt görevleri (Tasks - Kırmızı) panomuzda renklendirerek takip ettik.
 
-*   **Açıklama:** Projedeki modüler yapıları (Cari, Raporlama, Kasa/Banka, Fatura, Stok ve BulutAI altyapısı) aşamalara bölerek süreç takibini bu pano üzerinden canlı olarak güncelledik.
+*    Projedeki modüler yapıları (Cari, Raporlama, Kasa/Banka, Fatura, Stok ve BulutAI altyapısı) aşamalara bölerek süreç takibini bu pano üzerinden canlı olarak güncelledik.
   
 *   **Bağlantı Linki:** [https://miro.com/app/board/uXjVHA0FEf0=/] (aynı linkten süreç devam etmekte)
   
