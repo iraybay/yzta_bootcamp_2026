@@ -91,7 +91,7 @@ Projenin bu dönemi için planlanan ve aktif geliştirme süreci devam eden tüm
 
 ### 3. Daily Scrum Nasıl Yapıldı?
 Ekip içi senkronizasyonu sağlamak, teknik detayları tartışmak ve olası tıkanıklıkları (blockers) hızlıca çözmek adına düzenli Daily Scrum toplantıları gerçekleştirdik.
-*   **Açıklama:** Belirlenen saatlerde iletişim kanallarımız üzerinden bir araya gelerek; neler yapacağımıza dair konuşarak süreç takibi yaptık. (Whatsapp ve Slack)
+Belirlenen saatlerde iletişim kanallarımız üzerinden bir araya gelerek; neler yapacağımıza dair konuşarak süreç takibi yaptık. (Whatsapp ve Slack)
   
 
 ### 4. Ürün Geliştirme Durumu (UI / Çıktı Ekranları)
