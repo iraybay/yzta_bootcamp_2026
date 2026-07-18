@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mutabakat & Ödeme Planı - Bulutİş ERP</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="dark-mode">
+    <!-- Background Ambient Orbs -->
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-orb orb-3"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <a href="/" class="btn-back-home"><i class="fa-solid fa-arrow-left"></i></a>
+                <div class="app-logo" style="margin-left: 20px;">
+                    <i class="fa-solid fa-layer-group logo-icon"></i>
+                    <span class="logo-text">Bulut<span class="logo-accent">İş</span></span>
+                </div>
+            </div>
+            <div class="header-right">
+                <span class="page-indicator" style="font-family: var(--font-heading); font-weight: 700; color: var(--text-primary);"><i class="fa-solid fa-scale-balanced"></i> Mutabakat & Ödeme Raporu</span>
+            </div>
+        </header>
+
+        <!-- Payment Metrics Row -->
+        <section class="payment-metrics-row">
+            <div class="metric-card shadow-sm">
+                <div class="metric-icon-box m-green"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                <div class="metric-info">
+                    <span class="label">Alacak Ödemeleri (Alacak)</span>
+                    <span class="value val-green" id="totalGelir">0.00 TL</span>
+                </div>
+            </div>
+            <div class="metric-card shadow-sm">
+                <div class="metric-icon-box m-red"><i class="fa-solid fa-arrow-trend-down"></i></div>
+                <div class="metric-info">
+                    <span class="label">Borç Ödemeleri (Borç)</span>
+                    <span class="value val-red" id="totalBorc">0.00 TL</span>
+                </div>
+            </div>
+            <div class="metric-card shadow-sm">
+                <div class="metric-icon-box m-blue"><i class="fa-solid fa-circle-check"></i></div>
+                <div class="metric-info">
+                    <span class="label">Toplam Ödenen Miktar</span>
+                    <span class="value val-green" id="totalOdenen">0.00 TL</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filters and Report Data Table -->
+        <main class="report-list-card">
+            <!-- Filtering Form Bar -->
+            <form class="filters-bar" id="filterForm" onsubmit="applyFilters(event)">
+                <div class="filter-group">
+                    <label for="startDate"><i class="fa-regular fa-calendar"></i> Başlangıç Tarihi</label>
+                    <input type="date" id="startDate" name="start_date">
+                </div>
+                <div class="filter-group">
+                    <label for="endDate"><i class="fa-regular fa-calendar"></i> Bitiş Tarihi</label>
+                    <input type="date" id="endDate" name="end_date">
+                </div>
+                <div class="filter-group">
+                    <label for="typeFilter"><i class="fa-solid fa-list-check"></i> Rapor Tipi</label>
+                    <select id="typeFilter" name="tip">
+                        <option value="all">Tüm Ödemeler</option>
+                        <option value="gelir">Gelir Ödemeleri (Giriş)</option>
+                        <option value="borc">Borç Ödemeleri (Çıkış)</option>
+                    </select>
+                </div>
+                <div class="filter-buttons">
+                    <button type="submit" class="btn-filter"><i class="fa-solid fa-magnifying-glass"></i> Filtrele</button>
+                    <button type="button" class="btn-clear" onclick="clearFilters()"><i class="fa-solid fa-eraser"></i> Temizle</button>
+                </div>
+            </form>
+
+            <div class="table-container">
+                <table class="report-data-table">
+                    <thead>
+                        <tr>
+                            <th>Vade Tarihi</th>
+                            <th>Cari İsim / Açıklama</th>
+                            <th>Tip</th>
+                            <th>Tutar (TRY)</th>
+                            <th>Ödenen (TRY)</th>
+                            <th>Ödeme Durumu</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody">
+                        <tr>
+                            <td colspan="6" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> Veriler yükleniyor...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Custom inline styles for report layout -->
+    <style>
+        .app-container {
+            padding: 0 20px 20px 20px !important;
+        }
+        .app-header {
+            padding: 12px 18px !important;
+            margin: 10px 0 14px 0 !important;
+        }
+        .btn-back-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 120, 212, 0.1);
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+        }
+        .btn-back-home:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .payment-metrics-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .metric-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius-md);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .metric-icon-box {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .m-orange { background: rgba(255, 140, 0, 0.1); color: var(--orange-primary); }
+        .m-blue { background: rgba(0, 120, 212, 0.1); color: var(--blue-primary); }
+        .m-green { background: rgba(16, 185, 129, 0.1); color: var(--green-primary); }
+        .m-red { background: rgba(239, 68, 68, 0.1); color: var(--danger-color); }
+        
+        .metric-info .label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+        .metric-info .value {
+            font-family: var(--font-heading);
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .report-list-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius-md);
+            padding: 16px 20px;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .filters-bar {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 180px;
+        }
+        .filter-group label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+        .filter-group input, .filter-group select {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            padding: 8px 14px;
+            border-radius: 50px;
+            color: var(--text-primary);
+            font-size: 12px;
+            outline: none;
+        }
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .btn-filter, .btn-clear {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            transition: var(--transition-smooth);
+        }
+        .btn-filter {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        .btn-filter:hover {
+            opacity: 0.9;
+        }
+        .btn-clear {
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+        .btn-clear:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+        .report-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 12px;
+        }
+        .report-data-table th {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .report-data-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .report-data-table tbody tr:hover {
+            background: rgba(0, 120, 212, 0.05);
+        }
+        .row-gelir { background: rgba(16, 185, 129, 0.04); }
+        .row-borc { background: rgba(239, 68, 68, 0.04); }
+        .row-gelir:hover { background: rgba(16, 185, 129, 0.09) !important; }
+        .row-borc:hover { background: rgba(239, 68, 68, 0.08) !important; }
+
+        .badge-payment {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 50px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+        .pay-inflow { background: rgba(16, 185, 129, 0.12); color: var(--green-primary); }
+        .pay-outflow { background: rgba(239, 68, 68, 0.12); color: var(--danger-color); }
+        
+        .val-positive { color: var(--green-primary); }
+        .val-negative { color: var(--danger-color); }
+        .val-muted { color: var(--text-secondary); }
+
+        /* Glowing LED status indicator styling */
+        .led-container {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .led-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .led-green {
+            background-color: var(--green-primary);
+            box-shadow: 0 0 8px var(--green-primary);
+            animation: pulse-green 2.5s infinite alternate;
+        }
+        .led-red {
+            background-color: var(--danger-color);
+            box-shadow: 0 0 8px var(--danger-color);
+            animation: pulse-red 2.5s infinite alternate;
+        }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 2px var(--green-primary); }
+            100% { box-shadow: 0 0 8px var(--green-primary), 0 0 12px rgba(42, 157, 143, 0.4); }
+        }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 2px var(--danger-color); }
+            100% { box-shadow: 0 0 8px var(--danger-color), 0 0 12px rgba(239, 68, 68, 0.4); }
+        }
+
+        .text-center { text-align: center; }
+        .py-4 { padding-top: 24px; padding-bottom: 24px; }
+        
+        @media (max-width: 768px) {
+            .payment-metrics-row {
+                grid-template-columns: 1fr;
+            }
+            .filters-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filter-buttons {
+                justify-content: flex-end;
+            }
+        }
+    </style>
+
+    <!-- Client Script to load and query database reports -->
+    <script>
+        // Check dark mode state
+        if (localStorage.getItem('theme') !== 'light') {
+            document.body.classList.add('dark-mode');
+            document.body.classList.remove('light-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+            document.body.classList.add('light-mode');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchReportList();
+        });
+
+        async function fetchReportList(params = '') {
+            const tbody = document.getElementById('reportTableBody');
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> Veriler getiriliyor...</td></tr>`;
+            
+            try {
+                const response = await fetch(`/api/mutabakat/liste${params}`);
+                if (!response.ok) throw new Error();
+                const json = await response.json();
+                
+                // Update metrics summary
+                document.getElementById('totalGelir').textContent = formatCurrency(json.toplam_gelir);
+                document.getElementById('totalBorc').textContent = formatCurrency(json.toplam_borç);
+
+                document.getElementById('totalOdenen').textContent = formatCurrency(json.toplam_odenen ?? 0);
+                
+                // Render table
+                renderTable(json.liste);
+                
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4" style="color: var(--danger-color);"><i class="fa-solid fa-circle-exclamation"></i> Veriler yüklenemedi.</td></tr>`;
+            }
+        }
+
+        function renderTable(list) {
+            const tbody = document.getElementById('reportTableBody');
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Filtre kriterlerine uygun ödeme kaydı bulunamadı.</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            list.forEach(item => {
+                const tr = document.createElement('tr');
+                const isInflow = item.tip === 'gelir';
+
+                const amountColor = isInflow ? 'val-positive' : 'val-negative';
+                const sign = isInflow ? '+' : '-';
+                // Satır arka plan rengi: gelir=yeşil, borc=kırmızı
+                tr.className = isInflow ? 'row-gelir' : 'row-borc';
+
+                const statusHtml = item.durum === 'Ödendi'
+                    ? '<span class="badge-payment" style="background:rgba(16,185,129,0.12);color:var(--green-primary);"><i class="fa-solid fa-circle-check"></i> Ödendi</span>'
+                    : (item.durum === 'Kısmi Ödendi'
+                       ? '<span class="badge-payment" style="background:rgba(245,158,11,0.12);color:var(--orange-primary);"><i class="fa-solid fa-circle-half-stroke"></i> Kısmi Ödendi</span>'
+                       : '<span class="badge-payment" style="background:rgba(100,116,139,0.12);color:var(--text-secondary);"><i class="fa-regular fa-clock"></i> Bekliyor</span>');
+
+                const dateParts = item.tarih.split('-');
+                const formattedDate = dateParts.length === 3 ? `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}` : item.tarih;
+
+                // Tip badge
+                const tipBadge = isInflow
+                    ? '<span style="display:inline-block;padding:2px 8px;border-radius:50px;font-size:10px;font-weight:700;background:rgba(16,185,129,0.15);color:var(--green-primary);"><i class="fa-solid fa-arrow-trend-up"></i> Alacak</span>'
+                    : '<span style="display:inline-block;padding:2px 8px;border-radius:50px;font-size:10px;font-weight:700;background:rgba(239,68,68,0.12);color:var(--danger-color);"><i class="fa-solid fa-arrow-trend-down"></i> Borç</span>';
+
+                const odenen = item.tutar - item.kalan_tutar;
+                const odenenClass = odenen > 0 ? 'val-positive' : 'val-muted';
+
+                tr.innerHTML = `
+                    <td><strong>${formattedDate}</strong></td>
+                    <td><strong>${item.cari_ad}</strong><br><small style="opacity:.7;">${item.aciklama || ''}</small></td>
+                    <td>${tipBadge}</td>
+                    <td class="${amountColor}" style="font-weight:700;">${sign}${formatCurrency(item.tutar)}</td>
+                    <td class="${odenenClass}" style="font-weight:700;">${formatCurrency(odenen)}</td>
+                    <td>${statusHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function applyFilters(event) {
+            event.preventDefault();
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            const type = document.getElementById('typeFilter').value;
+            
+            const params = new URLSearchParams();
+            if (start) params.append('start_date', start);
+            if (end) params.append('end_date', end);
+            if (type) params.append('tip', type);
+            
+            fetchReportList(`?${params.toString()}`);
+        }
+
+        function clearFilters() {
+            document.getElementById('filterForm').reset();
+            fetchReportList();
+        }
+
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
+        }
+    </script>
+</body>
+</html>

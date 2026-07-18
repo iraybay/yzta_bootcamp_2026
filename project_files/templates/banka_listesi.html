@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banka Listesi - Bulutİş ERP</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .app-container { padding: 0 20px 20px 20px !important; }
+        .app-header { padding: 12px 18px !important; margin: 10px 0 14px 0 !important; }
+        .btn-back-home {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(0,120,212,0.1); color: var(--primary-color);
+            border: 1px solid var(--border-color); padding: 6px 14px;
+            border-radius: 50px; font-size: 12px; font-weight: 600;
+            text-decoration: none; transition: var(--transition-smooth);
+        }
+        .btn-back-home:hover { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .banka-metrics-row {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 12px; margin-bottom: 14px;
+        }
+        .metric-card {
+            background: var(--card-bg); backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border); border-radius: var(--border-radius-md);
+            padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+        }
+        .metric-icon-box {
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-size: 16px;
+        }
+        .m-purple { background: rgba(139,92,246,0.1); color: #8b5cf6; }
+        .m-green  { background: rgba(16,185,129,0.1); color: var(--green-primary); }
+        .m-blue   { background: rgba(0,120,212,0.1);  color: var(--primary-color); }
+        .metric-info .label { display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 2px; }
+        .metric-info .value { font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--text-primary); }
+        .val-green { color: var(--green-primary); }
+        .val-red { color: var(--danger-color); }
+        .bal-positive { color: var(--green-primary); font-weight: 700; }
+        .bal-negative { color: var(--danger-color);  font-weight: 700; }
+        .link-hover { cursor: pointer; transition: color 0.2s ease; color: var(--primary-color); }
+        .link-hover:hover { color: #8b5cf6; text-decoration: underline; }
+        .cari-list-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius-md);
+            padding: 16px 20px;
+            box-shadow: var(--card-shadow);
+        }
+        .table-actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .search-box-wrapper {
+            flex: 1;
+            min-width: 280px;
+            position: relative;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            padding: 8px 18px 8px 40px;
+        }
+        .search-box-wrapper .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .search-box-wrapper input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+        .table-container { overflow-x: auto; }
+        .cari-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+        .cari-data-table th {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .cari-data-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .cari-data-table tbody tr {
+            transition: var(--transition-smooth);
+            cursor: pointer;
+        }
+        .cari-data-table tbody tr:hover {
+            background: rgba(139, 92, 246, 0.08) !important;
+            transform: scale(1.005);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        .badge-type { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 50px; display: inline-block; }
+        .bg-banka  { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+        .iban-cell { font-size: 10px; opacity: 0.75; font-family: monospace; margin-top: 2px; }
+        .btn-add-account {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--primary-color); color: white; border: none;
+            padding: 10px 18px; border-radius: 8px; font-family: var(--font-heading);
+            font-weight: 600; font-size: 13px; cursor: pointer; transition: var(--transition-smooth);
+        }
+        .btn-add-account:hover { background: #005a9e; transform: translateY(-2px); }
+        .action-header-right { display: flex; align-items: center; gap: 12px; }
+        .text-center { text-align: center; }
+        .py-4 { padding-top: 24px; padding-bottom: 24px; }
+        @media (max-width: 768px) { .banka-metrics-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body class="dark-mode">
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-orb orb-3"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <a href="/" class="btn-back-home"><i class="fa-solid fa-arrow-left"></i></a>
+                <div class="app-logo" style="margin-left: 20px;">
+                    <i class="fa-solid fa-layer-group logo-icon"></i>
+                    <span class="logo-text">Bulut<span class="logo-accent">İş</span></span>
+                </div>
+            </div>
+            <div class="header-right">
+                <span class="page-indicator" style="font-family: var(--font-heading); font-weight: 700; color: var(--text-primary);"><i class="fa-solid fa-building-columns"></i> Banka Hesapları</span>
+            </div>
+        </header>
+
+        <!-- Metrics Row -->
+        <section class="banka-metrics-row">
+            <div class="metric-card shadow-sm">
+                <div class="metric-icon-box m-purple"><i class="fa-solid fa-landmark"></i></div>
+                <div class="metric-info">
+                    <span class="label">Banka Hesap Sayısı</span>
+                    <span class="value" id="totalBankaCount">0</span>
+                </div>
+            </div>
+            <div class="metric-card shadow-sm">
+                <div class="metric-icon-box m-green"><i class="fa-solid fa-sack-dollar"></i></div>
+                <div class="metric-info">
+                    <span class="label">Toplam Banka Bakiyesi</span>
+                    <span class="value val-green" id="totalBankaBalance">0.00 ₺</span>
+                </div>
+            </div>
+            <div class="metric-card shadow-sm">
+                <div class="metric-icon-box m-blue"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="metric-info">
+                    <span class="label">En Güçlü Kredibilite</span>
+                    <span class="value" id="maxBankaKredibilite">-</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Card -->
+        <main class="cari-list-card">
+            <div class="table-actions-bar">
+                <div class="search-box-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="searchBankaInput" placeholder="Banka adı veya şube ile arayın..." onkeyup="filterBankaList()">
+                </div>
+                <div class="action-header-right">
+                    <button class="btn-add-account" onclick="showAddBankaModal()"><i class="fa-solid fa-plus"></i> Yeni Banka Hesabı Ekle</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="cari-data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Banka Tanımı / Adı</th>
+                            <th>Şube</th>
+                            <th>Hesap / IBAN</th>
+                            <th>Kredibilite</th>
+                            <th>Bakiye</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bankaTableBody">
+                        <tr>
+                            <td colspan="6" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> Yükleniyor...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let allBanka = [];
+
+        window.onload = function() {
+            fetchBankaList();
+        }
+
+        async function fetchBankaList() {
+            const tbody = document.getElementById('bankaTableBody');
+            try {
+                const res = await fetch('/api/kasa-banka/hesaplar?tur=banka');
+                if (!res.ok) throw new Error();
+                const json = await res.json();
+                
+                allBanka = json.data;
+                renderTable(allBanka);
+                updateMetrics(allBanka);
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4" style="color: var(--danger-color);"><i class="fa-solid fa-triangle-exclamation"></i> Veriler yüklenemedi.</td></tr>`;
+            }
+        }
+
+        function updateMetrics(list) {
+            document.getElementById('totalBankaCount').textContent = list.length;
+            const totalVal = list.reduce((sum, item) => sum + item.bakiye, 0);
+            document.getElementById('totalBankaBalance').textContent = formatCurrency(totalVal, 'TRY');
+            
+            const creds = list.map(item => item.kredibilite || 'A');
+            const bestCred = creds.includes('A+') ? 'A+' : (creds.includes('A') ? 'A' : (creds.includes('B') ? 'B' : '-'));
+            document.getElementById('maxBankaKredibilite').textContent = bestCred;
+        }
+
+        function renderTable(list) {
+            const tbody = document.getElementById('bankaTableBody');
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Kayıtlı banka hesabı bulunamadı.</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            list.forEach(c => {
+                const tr = document.createElement('tr');
+                const isPositive = c.bakiye >= 0;
+                const balClass = isPositive ? 'bal-positive' : 'bal-negative';
+                const prefix = isPositive ? '+' : '';
+                
+                const k = c.kredibilite || 'A';
+                let kredBadge = '';
+                if (k === 'A+') {
+                    kredBadge = `<span class="badge-type" style="background: rgba(16, 185, 129, 0.12); color: var(--success-color); border: 1px solid rgba(16, 185, 129, 0.2);">${k}</span>`;
+                } else if (k === 'A') {
+                    kredBadge = `<span class="badge-type" style="background: rgba(0, 120, 212, 0.12); color: var(--primary-color); border: 1px solid rgba(0, 120, 212, 0.2);">${k}</span>`;
+                } else if (k === 'B') {
+                    kredBadge = `<span class="badge-type" style="background: rgba(245, 158, 11, 0.12); color: var(--warning-color); border: 1px solid rgba(245, 158, 11, 0.2);">${k}</span>`;
+                } else {
+                    kredBadge = `<span class="badge-type" style="background: rgba(239, 68, 68, 0.12); color: var(--danger-color); border: 1px solid rgba(239, 68, 68, 0.2);">${k}</span>`;
+                }
+                
+                tr.innerHTML = `
+                    <td><strong>#${c.id}</strong></td>
+                    <td><strong class="link-hover">${c.ad}</strong></td>
+                    <td><strong>${c.sube || '-'}</strong></td>
+                    <td>
+                        <div style="font-size: 13px; font-weight: 600;">${c.hesap_no || '-'}</div>
+                        <div class="iban-cell">${c.iban || '-'}</div>
+                    </td>
+                    <td>${kredBadge}</td>
+                    <td class="${balClass}">${prefix}${formatCurrency(c.bakiye, c.doviz_turu)}</td>
+                `;
+                tr.onclick = () => { location.href = `/banka-detay/${c.id}`; };
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterBankaList() {
+            const query = document.getElementById('searchBankaInput').value.toLowerCase().trim();
+            const filtered = allBanka.filter(c => 
+                c.ad.toLowerCase().includes(query) || 
+                (c.sube && c.sube.toLowerCase().includes(query))
+            );
+            renderTable(filtered);
+        }
+
+        function showAddBankaModal() {
+            Swal.fire({
+                title: 'Yeni Banka Hesabı Ekle',
+                html: `
+                    <div style="text-align: left; font-size: 13px;">
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 4px;">Banka Tanımı / Adı *</label>
+                            <input type="text" id="swalAd" class="swal2-input" style="width: 90%; margin: 0;" placeholder="Örn: Akbank Ticari">
+                        </div>
+                        <div style="margin-bottom: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 4px;">Şube *</label>
+                                <input type="text" id="swalSube" class="swal2-input" style="width: 85%; margin: 0;" placeholder="Örn: Maslak">
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 4px;">Para Birimi</label>
+                                <select id="swalDoviz" class="swal2-input" style="width: 90%; margin: 0; padding: 0 10px; height: 44px; font-size: 13px;">
+                                    <option value="TRY">TRY (₺)</option>
+                                    <option value="USD">USD ($)</option>
+                                    <option value="EUR">EUR (€)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 4px;">Hesap No *</label>
+                            <input type="text" id="swalHesapNo" class="swal2-input" style="width: 90%; margin: 0;" placeholder="Örn: 4480-129033">
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 4px;">IBAN *</label>
+                            <input type="text" id="swalIban" class="swal2-input" style="width: 90%; margin: 0; font-family: monospace;" placeholder="TR...">
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 4px;">Kredibilite</label>
+                            <select id="swalKredibilite" class="swal2-input" style="width: 90%; margin: 0; padding: 0 10px; height: 44px; font-size: 13px;">
+                                    <option value="A+">A+</option>
+                                    <option value="A" selected>A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                            </select>
+                        </div>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Hesap Ekle',
+                cancelButtonText: 'İptal',
+                confirmButtonColor: '#0078d4',
+                preConfirm: () => {
+                    const ad = document.getElementById('swalAd').value;
+                    const sube = document.getElementById('swalSube').value;
+                    const doviz_turu = document.getElementById('swalDoviz').value;
+                    const hesap_no = document.getElementById('swalHesapNo').value;
+                    const iban = document.getElementById('swalIban').value;
+                    const kredibilite = document.getElementById('swalKredibilite').value;
+                    
+                    if (!ad || !ad.trim()) {
+                        Swal.showValidationMessage('Banka Adı alanı zorunludur.');
+                        return false;
+                    }
+                    if (!sube || !sube.trim()) {
+                        Swal.showValidationMessage('Şube alanı zorunludur.');
+                        return false;
+                    }
+                    if (!hesap_no || !hesap_no.trim()) {
+                        Swal.showValidationMessage('Hesap No alanı zorunludur.');
+                        return false;
+                    }
+                    if (!iban || !iban.trim()) {
+                        Swal.showValidationMessage('IBAN alanı zorunludur.');
+                        return false;
+                    }
+                    return { ad, tur: 'banka', sube, doviz_turu, hesap_no, iban, kredibilite };
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const res = await fetch('/api/kasa-banka/hesap-ekle', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(result.value)
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            Swal.fire('Başarılı', 'Banka hesabı başarıyla eklendi.', 'success');
+                            fetchBankaList();
+                        } else {
+                            Swal.fire('Hata', data.message || 'Bir hata oluştu.', 'error');
+                        }
+                    } catch (err) {
+                        Swal.fire('Hata', 'Sunucu ile iletişim kurulamadı.', 'error');
+                    }
+                }
+            });
+        }
+
+        function formatCurrency(val, currency = 'TRY') {
+            return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: currency }).format(val);
+        }
+    </script>
+</body>
+</html>

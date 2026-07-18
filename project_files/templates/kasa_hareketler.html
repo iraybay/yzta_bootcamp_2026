@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kasa & Banka Hareketleri - Bulutİş ERP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="dark-mode">
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-orb orb-3"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <a href="/" class="btn-back-home"><i class="fa-solid fa-arrow-left"></i></a>
+                <div class="app-logo" style="margin-left: 20px;">
+                    <i class="fa-solid fa-layer-group logo-icon"></i>
+                    <span class="logo-text">Bulut<span class="logo-accent">İş</span></span>
+                </div>
+            </div>
+            <div class="header-right">
+                <span class="page-indicator" style="font-family: var(--font-heading); font-weight: 700; color: var(--text-primary);">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Kasa & Banka Hareketleri
+                </span>
+            </div>
+        </header>
+
+        <!-- Metrics Row -->
+        <section class="summary-metrics-row">
+            <div class="metric-card shadow-sm">
+                <div class="metric-icon-box m-green"><i class="fa-solid fa-arrow-down-to-bracket"></i></div>
+                <div class="metric-info">
+                    <span class="label">Toplam Giriş (Tahsilat)</span>
+                    <span class="value val-green" id="totalGiris">0,00 ₺</span>
+                </div>
+            </div>
+            <div class="metric-card shadow-sm">
+                <div class="metric-icon-box m-red"><i class="fa-solid fa-arrow-up-from-bracket"></i></div>
+                <div class="metric-info">
+                    <span class="label">Toplam Çıkış (Ödeme)</span>
+                    <span class="value val-red" id="totalCikis">0,00 ₺</span>
+                </div>
+            </div>
+            <div class="metric-card shadow-sm">
+                <div class="metric-icon-box m-orange"><i class="fa-solid fa-scale-balanced"></i></div>
+                <div class="metric-info">
+                    <span class="label">Net Dönem Akışı</span>
+                    <span class="value" id="netDenge">0,00 ₺</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Transactions Table Card -->
+        <main class="transactions-list-card">
+            <div class="card-header-bar">
+                <h3>
+                    <i class="fa-solid fa-list-ul icon-orange"></i>
+                    Kasa & Banka İşlem Geçmişi (<span id="islemCount">0</span> Kayıt)
+                    [ <span id="dateRangeText" style="color: var(--primary-color); font-weight: 700;">-</span> ]
+                </h3>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary);"><i class="fa-regular fa-calendar-days"></i> Tarih:</label>
+                    <input type="date" id="startDate" onchange="fetchTransactions()" style="background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--card-border); border-radius: 8px; padding: 6px 10px; font-size: 12px; outline: none; font-family: var(--font-body);">
+                    <span style="color: var(--text-secondary); font-size: 12px;">-</span>
+                    <input type="date" id="endDate" onchange="fetchTransactions()" style="background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--card-border); border-radius: 8px; padding: 6px 10px; font-size: 12px; outline: none; font-family: var(--font-body);">
+                    <select id="accountTypeFilter" onchange="fetchTransactions()" style="background: var(--input-bg); border: 1px solid var(--card-border); padding: 6px 14px; border-radius: 50px; color: var(--text-primary); font-size: 12px; outline: none; cursor: pointer;">
+                        <option value="all">Tüm Hesaplar</option>
+                        <option value="kasa">Sadece Kasalar</option>
+                        <option value="banka">Sadece Bankalar</option>
+                    </select>
+                    <input type="text" id="searchInput" placeholder="Açıklama ara..." onkeyup="filterLocal()" style="background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--card-border); border-radius: 50px; padding: 6px 12px; font-size: 12px; outline: none; font-family: var(--font-body);">
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="islem-data-table">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Açıklama / Tanım</th>
+                            <th>Hesap</th>
+                            <th>Döviz</th>
+                            <th>Tutar / İşlem Yönü</th>
+                        </tr>
+                    </thead>
+                    <tbody id="islemTableBody">
+                        <tr><td colspan="5" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> Hareketler yükleniyor...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <style>
+        .app-container { padding: 0 20px 20px 20px !important; }
+        .app-header { padding: 12px 18px !important; margin: 10px 0 14px 0 !important; }
+        .btn-back-home {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(0,120,212,0.1); color: var(--primary-color);
+            border: 1px solid var(--border-color); padding: 6px 14px;
+            border-radius: 50px; font-size: 12px; font-weight: 600;
+            text-decoration: none; transition: var(--transition-smooth);
+        }
+        .btn-back-home:hover { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+
+        .summary-metrics-row {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 12px; margin-bottom: 14px;
+        }
+        .metric-card {
+            background: var(--card-bg); backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border); border-radius: var(--border-radius-md);
+            padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+        }
+        .metric-icon-box {
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-size: 16px;
+        }
+        .m-orange { background: rgba(255,140,0,0.1); color: var(--orange-primary); }
+        .m-green  { background: rgba(16,185,129,0.1); color: var(--green-primary); }
+        .m-red    { background: rgba(239,68,68,0.1);  color: var(--danger-color); }
+        .metric-info .label { display: block; font-size: 11px; color: var(--text-secondary); margin-bottom: 2px; }
+        .metric-info .value { font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--text-primary); }
+
+        .transactions-list-card {
+            background: var(--card-bg); backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border); border-radius: var(--border-radius-md);
+            padding: 16px 20px; box-shadow: var(--card-shadow);
+        }
+        .card-header-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px; padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 12px;
+        }
+        .card-header-bar h3 {
+            font-family: var(--font-heading); font-size: 15px; font-weight: 700;
+            color: var(--text-primary); display: flex; align-items: center; gap: 8px;
+        }
+        .table-container { overflow-x: auto; }
+        .islem-data-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+        .islem-data-table th {
+            font-family: var(--font-heading); font-weight: 700; color: var(--text-secondary);
+            padding: 8px 12px; border-bottom: 2px solid var(--border-color);
+        }
+        .islem-data-table td { padding: 8px 12px; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
+        .islem-data-table tbody tr:hover { background: rgba(0,120,212,0.04); }
+
+        .badge-type { display: inline-block; padding: 3px 8px; border-radius: 50px; font-size: 10px; font-weight: 700; }
+        .bg-kasa   { background: rgba(0,120,212,0.12); color: var(--primary-color); }
+        .bg-banka  { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+        .val-positive { color: var(--green-primary); font-weight: 700; }
+        .val-negative { color: var(--danger-color);  font-weight: 700; }
+        .val-green { color: var(--green-primary); }
+        .val-red   { color: var(--danger-color); }
+        .text-center { text-align: center; }
+        .py-4 { padding-top: 24px; padding-bottom: 24px; }
+
+        @media (max-width: 768px) {
+            .summary-metrics-row { grid-template-columns: 1fr; }
+        }
+    </style>
+
+    <script>
+        if (localStorage.getItem('theme') !== 'light') {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+            document.body.classList.add('light-mode');
+        }
+
+        let allTransactions = [];
+
+        function fmt(d) {
+            if (!d) return '';
+            const p = d.split('-');
+            return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : d;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('startDate').value = '2026-05-15';
+            document.getElementById('endDate').value = '2026-07-18';
+            fetchTransactions();
+        });
+
+        async function fetchTransactions() {
+            const start = document.getElementById('startDate').value;
+            const end   = document.getElementById('endDate').value;
+            const type  = document.getElementById('accountTypeFilter').value;
+            document.getElementById('dateRangeText').textContent = `${fmt(start)} - ${fmt(end)}`;
+            try {
+                const res  = await fetch(`/api/kasa-banka/hareketler?start_date=${start}&end_date=${end}&tur=${type}`);
+                if (!res.ok) throw new Error();
+                const json = await res.json();
+                allTransactions = json.liste;
+
+                document.getElementById('totalGiris').textContent = formatCurrency(json.total_giris);
+                document.getElementById('totalCikis').textContent = formatCurrency(json.total_cikis);
+
+                const nd = document.getElementById('netDenge');
+                const sign = json.net_denge >= 0 ? '+' : '';
+                nd.textContent = sign + formatCurrency(json.net_denge);
+                nd.className = `value ${json.net_denge >= 0 ? 'val-positive' : 'val-negative'}`;
+
+                renderTable(allTransactions);
+            } catch {
+                document.getElementById('islemTableBody').innerHTML =
+                    `<tr><td colspan="5" class="text-center py-4" style="color:var(--danger-color);"><i class="fa-solid fa-circle-exclamation"></i> Veriler yüklenemedi.</td></tr>`;
+            }
+        }
+
+        function renderTable(list) {
+            const tbody = document.getElementById('islemTableBody');
+            document.getElementById('islemCount').textContent = list.length;
+            if (!list.length) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4">Filtrelere uygun hareket bulunamadı.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = '';
+            list.forEach(item => {
+                const isGiris = item.tip === 'giris';
+                const colorClass = isGiris ? 'val-positive' : 'val-negative';
+                const sign = isGiris ? '+' : '-';
+                const isKasa = item.hesap_tur === 'kasa';
+                const typeClass = isKasa ? 'bg-kasa' : 'bg-banka';
+                const typeLabel = isKasa ? 'Kasa' : 'Banka';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${fmt(item.tarih)}</strong></td>
+                    <td><strong>${item.tanim}</strong></td>
+                    <td>
+                        <span class="badge-type ${typeClass}" style="margin-right:6px;">${typeLabel}</span>
+                        <span style="font-weight:600;">${item.hesap_ad}</span>
+                    </td>
+                    <td><strong>${item.doviz_turu || 'TRY'}</strong></td>
+                    <td class="${colorClass}">${sign}${formatCurrency(item.tutar, item.doviz_turu)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterLocal() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            renderTable(allTransactions.filter(i =>
+                i.tanim.toLowerCase().includes(q) || i.hesap_ad.toLowerCase().includes(q)
+            ));
+        }
+
+        function formatCurrency(val, currency = 'TRY') {
+            return new Intl.NumberFormat('tr-TR', { style: 'currency', currency }).format(val);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kasa Detayı - Bulutİş ERP</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .details-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 24px;
+            margin-top: 20px;
+        }
+        .info-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius-md);
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            height: fit-content;
+        }
+        .info-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+        }
+        .info-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(0, 120, 212, 0.1);
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .info-title h2 {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        .info-title span {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .info-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .info-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 13px;
+        }
+        .info-list li:last-child {
+            border-bottom: none;
+        }
+        .info-list li span.lbl {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .info-list li span.val {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .history-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius-md);
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+        }
+        .card-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .card-header-row h3 {
+            font-size: 16px;
+            font-weight: 800;
+            margin: 0;
+            color: var(--text-primary);
+        }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        .history-table th {
+            padding: 12px 16px;
+            border-bottom: 2px solid var(--border-color);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+        .history-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+        }
+        .badge-type {
+            font-weight: 700;
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 50px;
+        }
+        .bg-alacak { background: rgba(16, 185, 129, 0.12); color: var(--green-primary); }
+        .bg-borc { background: rgba(239, 68, 68, 0.12); color: var(--danger-color); }
+        .val-positive { color: var(--green-primary); }
+        .val-negative { color: var(--danger-color); }
+        .text-center { text-align: center; }
+        .py-4 { padding-top: 24px; padding-bottom: 24px; }
+        
+        .btn-action-trigger {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+        .btn-action-trigger:hover {
+            background: #005a9e;
+        }
+    </style>
+</head>
+<body class="dark-mode">
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    
+    <div class="app-container">
+        <!-- Dashboard Header -->
+        <header class="app-header shadow-sm">
+            <div class="header-left">
+                <a href="/kasa-listesi" class="btn-back">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+            </div>
+            <div class="header-right">
+                <span class="page-indicator" style="font-family: var(--font-heading); font-weight: 700; color: var(--text-primary);"><i class="fa-solid fa-wallet"></i> Kasa Hesap Detay Kartı</span>
+            </div>
+        </header>
+
+        <!-- Dynamic Grid -->
+        <div class="details-grid">
+            
+            <!-- Left Info Panel -->
+            <aside class="info-card">
+                <div class="info-header">
+                    <div class="info-avatar">
+                        <i class="fa-solid fa-cash-register"></i>
+                    </div>
+                    <div class="info-title">
+                        <h2 id="kasaName">...</h2>
+                        <span id="kasaTypeBadge">Kasa Temsilcisi</span>
+                    </div>
+                </div>
+                
+                <ul class="info-list">
+                    <li>
+                        <span class="lbl">Hesap Türü:</span>
+                        <span class="val">Kasa Hesabı</span>
+                    </li>
+                    <li>
+                        <span class="lbl">Para Birimi:</span>
+                        <span class="val" id="kasaCurrency">TRY</span>
+                    </li>
+                    <li>
+                        <span class="lbl">Kredibilite Seviyesi:</span>
+                        <span class="val" id="kasaKredibilite">-</span>
+                    </li>
+                    <li>
+                        <span class="lbl">Yetkili / Sorumlu:</span>
+                        <span class="val">Merkez Kasa Sorumlusu</span>
+                    </li>
+                    <li>
+                        <span class="lbl">Toplam Bakiye:</span>
+                        <span class="val" id="kasaBalanceVal" style="font-size: 15px; color: var(--green-primary); font-weight: 700;">0.00 ₺</span>
+                    </li>
+                </ul>
+            </aside>
+            
+            <!-- Right History List -->
+            <section class="history-card">
+                <div class="card-header-row">
+                    <h3>Hesap Ekstresi & Son Hareketler (<span id="historyCount">0</span>)</h3>
+                    <button class="btn-action-trigger" onclick="showAddTransactionModal()"><i class="fa-solid fa-circle-plus"></i> Giriş / Çıkış Ekle</button>
+                </div>
+                
+                <div class="table-container">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Açıklama</th>
+                                <th>Cari Kart</th>
+                                <th>İşlem Türü</th>
+                                <th>Tutar / İşlem Yönü</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> İşlemler yükleniyor...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const hesapId = {{ hesap_id }};
+        let currentCurrency = 'TRY';
+        let allCariler = [];
+
+        window.onload = function() {
+            fetchCariler();
+            fetchAccountDetails();
+        }
+
+        async function fetchCariler() {
+            try {
+                const res = await fetch('/api/cari/tum-liste');
+                const json = await res.json();
+                allCariler = json.data;
+            } catch(e){}
+        }
+
+        async function fetchAccountDetails() {
+            const tbody = document.getElementById('historyTableBody');
+            try {
+                const res = await fetch(`/api/kasa-banka/detay/${hesapId}`);
+                if (!res.ok) throw new Error();
+                const json = await res.json();
+                
+                const h = json.hesap;
+                currentCurrency = h.doviz_turu || 'TRY';
+                
+                document.getElementById('kasaName').textContent = h.ad;
+                document.getElementById('kasaCurrency').textContent = currentCurrency;
+                document.getElementById('kasaKredibilite').textContent = h.kredibilite || 'A';
+                
+                const isPositive = h.bakiye >= 0;
+                const balanceEl = document.getElementById('kasaBalanceVal');
+                balanceEl.textContent = (isPositive ? '+' : '') + formatCurrency(h.bakiye, currentCurrency);
+                balanceEl.className = isPositive ? 'val-positive' : 'val-negative';
+                
+                renderTable(json.transactions);
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4" style="color: var(--danger-color);"><i class="fa-solid fa-circle-exclamation"></i> Veriler yüklenemedi.</td></tr>`;
+            }
+        }
+
+        function renderTable(list) {
+            const tbody = document.getElementById('historyTableBody');
+            document.getElementById('historyCount').textContent = list.length;
+            
+            if (!list || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4">Bu kasaya ait herhangi bir hareket kaydı bulunamadı.</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            list.forEach(item => {
+                const tr = document.createElement('tr');
+                const isGiris = item.tip === 'giris';
+                const sign = isGiris ? '+' : '-';
+                const amountColor = isGiris ? 'val-positive' : 'val-negative';
+                
+                const dateParts = item.tarih.split('-');
+                const formattedDate = dateParts.length === 3 ? `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}` : item.tarih;
+                
+                // Format type labels
+                const typeLabels = {
+                    'tahsilat': 'Tahsilat',
+                    'odeme': 'Ödeme',
+                    'transfer': 'Transfer',
+                    'gelir': 'Gelir',
+                    'gider': 'Gider'
+                };
+                const tLabel = typeLabels[item.islem_turu] || 'Hareket';
+                const tClass = isGiris ? 'bg-alacak' : 'bg-borc';
+                
+                tr.innerHTML = `
+                    <td><strong>${formattedDate}</strong></td>
+                    <td><strong>${item.tanim}</strong></td>
+                    <td>${item.cari_ad ? `<span style="font-weight:600;"><i class="fa-solid fa-user-tag" style="opacity:0.6; margin-right:4px;"></i>${item.cari_ad}</span>` : '-'}</td>
+                    <td><span class="badge-type ${tClass}">${tLabel}</span></td>
+                    <td class="${amountColor}" style="font-weight: 700;">${sign}${formatCurrency(item.tutar, currentCurrency)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showAddTransactionModal() {
+            let cariOptions = `<option value="">-- Cari Kart Seçin (İsteğe Bağlı) --</option>`;
+            allCariler.forEach(c => {
+                cariOptions += `<option value="${c.id}">${c.ad} (${c.tip === 'musteri' ? 'Müşteri' : 'Tedarikçi'})</option>`;
+            });
+
+            Swal.fire({
+                title: 'Nakit Giriş / Çıkış Ekle',
+                html: `
+                    <div style="text-align: left; font-size: 13px;">
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 4px;">Açıklama / Tanım *</label>
+                            <input type="text" id="swalTanim" class="swal2-input" style="width: 90%; margin: 0;" placeholder="Örn: Ofis Kırtasiye Alımı">
+                        </div>
+                        <div style="margin-bottom: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 4px;">İşlem Türü</label>
+                                <select id="swalIslemTuru" class="swal2-input" style="width: 90%; margin: 0; padding: 0 10px; height: 44px; font-size: 13px;">
+                                    <option value="gelir">Gelir (Kasa Girişi)</option>
+                                    <option value="gider">Gider (Kasa Çıkışı)</option>
+                                    <option value="tahsilat">Müşteriden Tahsilat</option>
+                                    <option value="odeme">Tedarikçiye Ödeme</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 4px;">Tutar (${currentCurrency}) *</label>
+                                <input type="number" step="0.01" id="swalTutar" class="swal2-input" style="width: 85%; margin: 0;" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 4px;">Tarih *</label>
+                            <input type="date" id="swalTarih" class="swal2-input" style="width: 90%; margin: 0;" value="2026-07-18">
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 4px;">İlişkili Cari Kart</label>
+                            <select id="swalCariId" class="swal2-input" style="width: 93%; margin: 0; padding: 0 10px; height: 44px; font-size: 13px;">
+                                ${cariOptions}
+                            </select>
+                        </div>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'İşlemi Kaydet',
+                cancelButtonText: 'İptal',
+                confirmButtonColor: '#0078d4',
+                preConfirm: () => {
+                    const tanim = document.getElementById('swalTanim').value;
+                    const islem_turu = document.getElementById('swalIslemTuru').value;
+                    let tutar = parseFloat(document.getElementById('swalTutar').value);
+                    const tarih = document.getElementById('swalTarih').value;
+                    const cari_id = document.getElementById('swalCariId').value;
+                    
+                    if (!tanim || !tanim.trim()) {
+                        Swal.showValidationMessage('Açıklama alanı zorunludur.');
+                        return false;
+                    }
+                    if (isNaN(tutar) || tutar <= 0) {
+                        Swal.showValidationMessage('Geçerli bir pozitif tutar girin.');
+                        return false;
+                    }
+                    if (!tarih) {
+                        Swal.showValidationMessage('Tarih alanı zorunludur.');
+                        return false;
+                    }
+                    
+                    // Adjust sign: outflow for gider/odeme
+                    if (islem_turu === 'gider' || islem_turu === 'odeme') {
+                        tutar = -tutar;
+                    }
+                    
+                    return { hesap_id: hesapId, cari_id, tanim, tutar, islem_turu, tarih };
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const res = await fetch('/api/kasa-banka/islem-ekle', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(result.value)
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            Swal.fire('Başarılı', 'İşlem başarıyla kaydedildi.', 'success');
+                            fetchAccountDetails();
+                        } else {
+                            Swal.fire('Hata', data.message || 'Bir hata oluştu.', 'error');
+                        }
+                    } catch (err) {
+                        Swal.fire('Hata', 'Sunucu ile iletişim kurulamadı.', 'error');
+                    }
+                }
+            });
+        }
+
+        function formatCurrency(val, currency = 'TRY') {
+            return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: currency }).format(val);
+        }
+    </script>
+</body>
+</html>
