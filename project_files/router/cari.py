@@ -1,5 +1,7 @@
+from repositories.cari_repository import add_cari_record
+from repositories.dashboard_repository import get_dashboard_data
 from flask import Blueprint, request, jsonify
-import db_manager
+
 
 cari_bp = Blueprint('cari', __name__)
 
@@ -30,8 +32,8 @@ def add_cari():
         return jsonify({"success": False, "message": "Yetkili Kişi alanı zorunludur."}), 400
         
     try:
-        db_manager.add_cari_record(ad, tip, limit, vergi_no, vergi_dairesi, yetkili_kisi, eposta, telefon, il, ilce, mahalle, adres_detay, cari_grubu, kredibilite)
-        updated_data = db_manager.get_dashboard_data()
+        add_cari_record(ad, tip, limit, vergi_no, vergi_dairesi, yetkili_kisi, eposta, telefon, il, ilce, mahalle, adres_detay, cari_grubu, kredibilite)
+        updated_data = get_dashboard_data()
         return jsonify({"success": True, "data": updated_data['cari']})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500

@@ -34,7 +34,7 @@ def init_db():
         )
     ''')
     
-    # 2. Cari Islem Table with ISO Date & Cari Link
+    # 2. Cari Islem Table with ISO Date & Cari Link & Payment Date
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS cari_islem (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,6 +43,7 @@ def init_db():
             tutar REAL DEFAULT 0,
             tip TEXT NOT NULL, -- 'alacak' veya 'borc' veya 'bilgi'
             tarih TEXT NOT NULL, -- YYYY-MM-DD format
+            odeme_tarihi TEXT,   -- YYYY-MM-DD format (NULL means unpaid/open invoice)
             FOREIGN KEY (cari_id) REFERENCES cari(id) ON DELETE SET NULL
         )
     ''')
@@ -68,13 +69,15 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             hesap_id INTEGER,
             cari_id INTEGER,
+            fatura_id INTEGER,
             tanim TEXT NOT NULL,
             tutar REAL DEFAULT 0,
             tip TEXT NOT NULL, -- 'giris' veya 'cikis'
             tarih TEXT NOT NULL,
             islem_turu TEXT NOT NULL DEFAULT 'gelir', -- 'tahsilat', 'odeme', 'transfer', 'gelir', 'gider'
             FOREIGN KEY (hesap_id) REFERENCES kasa_banka_hesap(id) ON DELETE CASCADE,
-            FOREIGN KEY (cari_id) REFERENCES cari(id) ON DELETE SET NULL
+            FOREIGN KEY (cari_id) REFERENCES cari(id) ON DELETE SET NULL,
+            FOREIGN KEY (fatura_id) REFERENCES fatura_irsaliye(id) ON DELETE SET NULL
         )
     ''')
     
@@ -102,10 +105,14 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS fatura_irsaliye (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cari_id INTEGER,
+            belge_no TEXT,
+            belge_turu TEXT,
             tanim TEXT NOT NULL,
             tutar REAL DEFAULT 0,
             durum TEXT NOT NULL, -- 'Ödendi' veya 'Ödenmedi' veya 'Bekliyor'
-            tarih TEXT NOT NULL
+            tarih TEXT NOT NULL,
+            FOREIGN KEY (cari_id) REFERENCES cari(id)
         )
     ''')
 
@@ -120,6 +127,83 @@ def init_db():
             tarih TEXT NOT NULL,
             aciklama TEXT,
             durum TEXT NOT NULL
+        )
+    ''')
+
+    # 8. Tahsilat / Ödeme Makbuzları
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS cari_makbuz (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cari_id INTEGER NOT NULL,
+            hesap_id INTEGER NOT NULL,
+            makbuz_no TEXT NOT NULL,
+            tip TEXT NOT NULL, -- 'tahsilat' veya 'tediye'
+            tutar REAL DEFAULT 0,
+            tarih TEXT NOT NULL,
+            aciklama TEXT,
+            FOREIGN KEY (cari_id) REFERENCES cari(id),
+            FOREIGN KEY (hesap_id) REFERENCES kasa_banka_hesap(id)
+        )
+    ''')
+
+    # 9. Çek / Senet Takibi
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS cek_senet (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cari_id INTEGER NOT NULL,
+            belge_no TEXT NOT NULL,
+            tur TEXT NOT NULL, -- 'cek' veya 'senet'
+            yon TEXT NOT NULL, -- 'alinan' veya 'verilen'
+            tutar REAL DEFAULT 0,
+            vade_tarihi TEXT NOT NULL,
+            durum TEXT NOT NULL, -- 'portfoyde', 'tahsilde', 'ciro', 'odendi', 'karsiliksiz'
+            banka_bilgisi TEXT,
+            aciklama TEXT,
+            FOREIGN KEY (cari_id) REFERENCES cari(id)
+        )
+    ''')
+
+    # 10. Masraf / Gider Fişleri
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS masraf_fisi (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            hesap_id INTEGER NOT NULL,
+            fis_no TEXT,
+            kategori TEXT NOT NULL, -- 'yemek', 'yakit', 'ofis', vb.
+            tutar REAL DEFAULT 0,
+            tarih TEXT NOT NULL,
+            aciklama TEXT,
+            FOREIGN KEY (hesap_id) REFERENCES kasa_banka_hesap(id)
+        )
+    ''')
+
+    # 11. Siparişler (Alınan / Verilen)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS siparisler (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cari_id INTEGER NOT NULL,
+            siparis_no TEXT NOT NULL,
+            tip TEXT NOT NULL, -- 'alinan' veya 'verilen'
+            tutar REAL DEFAULT 0,
+            tarih TEXT NOT NULL,
+            teslim_tarihi TEXT,
+            durum TEXT NOT NULL, -- 'bekliyor', 'onaylandi', 'iptal', 'faturalandi'
+            aciklama TEXT,
+            FOREIGN KEY (cari_id) REFERENCES cari(id)
+        )
+    ''')
+
+    # 12. Depo / Stok Hareket Fişleri (Sayım, Fire, Transfer)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS depo_hareket (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            stok_id INTEGER NOT NULL,
+            fis_no TEXT NOT NULL,
+            tip TEXT NOT NULL, -- 'giris', 'cikis', 'sayim_fazlasi', 'fire'
+            miktar INTEGER DEFAULT 0,
+            tarih TEXT NOT NULL,
+            aciklama TEXT,
+            FOREIGN KEY (stok_id) REFERENCES stok(id)
         )
     ''')
     
@@ -167,46 +251,78 @@ def init_db():
         # Spreading dates starting from 2026-05-15 to 2026-07-18
         start_date = datetime.date(2026, 5, 15)
         
-        # Programmatic generation of exactly 20 transactions per Cari
-        # Total transactions seeded: 22 * 20 = 440 transactions
+        # Generate 20 transactions per Cari for EACH month starting from January 2026 to July 2026
+        # Months: 1, 2, 3, 4, 5, 6, 7. 20 * 7 = 140 transactions per Cari. Total = 22 * 140 = 3080 transactions
         cari_islemler = []
         for cari in all_seeded_cariler:
             c_id = cari['id']
             c_ad = cari['ad']
             c_tip = cari['tip']
             
-            for i in range(1, 21):
-                # Add randomized date spacing
-                date_diff = i * 3 + random.randint(-1, 1)
-                date_diff = max(1, date_diff)
-                t_date = (start_date + datetime.timedelta(days=date_diff)).isoformat()
+            for month in range(1, 8): # Jan (1) to Jul (7)
+                for i in range(1, 21): # 20 transactions per month
+                    # Spread evenly within the month
+                    day = i + random.randint(0, 8)
+                    day = min(28, max(1, day))
+                    t_date = datetime.date(2026, month, day).isoformat()
+                    
+                    odeme_tarihi = None
+                    if c_tip == 'musteri':
+                        if i % 2 == 1:
+                            # Sale/Receivable (Invoice)
+                            desc = f"{c_ad} - Ürün Satış Faturası düzenlendi ({month}. Ay - #{i})"
+                            tutar = round(random.uniform(5000.0, 25000.0) + (i * random.uniform(200.0, 800.0)), 2)
+                            tip = "alacak"
+                            
+                            # 70% chance invoice is paid
+                            if random.random() < 0.70:
+                                # 40% chance paid late (causes Findeks rating warnings)
+                                if random.random() < 0.40:
+                                    # Paid late (e.g. 35 to 50 days after invoice)
+                                    pay_day = day + random.randint(35, 50)
+                                else:
+                                    # Paid timely (e.g. 5 to 25 days after invoice)
+                                    pay_day = day + random.randint(5, 25)
+                                
+                                pay_month = month
+                                while pay_day > 28:
+                                    pay_day -= 28
+                                    pay_month += 1
+                                if pay_month <= 7:
+                                    odeme_tarihi = datetime.date(2026, pay_month, pay_day).isoformat()
+                        else:
+                            # Collection/Payment received
+                            desc = f"{c_ad} - Banka Havalesi İle Tahsilat ({month}. Ay - #{i})"
+                            tutar = round(random.uniform(4500.0, 24000.0) + (i * random.uniform(180.0, 750.0)), 2)
+                            tip = "borc"
+                    else: # Supplier
+                        if i % 2 == 1:
+                            # Purchase/Payable (Invoice)
+                            desc = f"{c_ad} - Hammadde Satın Alım Faturası ({month}. Ay - #{i})"
+                            tutar = round(random.uniform(6000.0, 30000.0) + (i * random.uniform(250.0, 1000.0)), 2)
+                            tip = "borc"
+                            
+                            if random.random() < 0.70:
+                                if random.random() < 0.40:
+                                    pay_day = day + random.randint(35, 50)
+                                else:
+                                    pay_day = day + random.randint(5, 25)
+                                    
+                                pay_month = month
+                                while pay_day > 28:
+                                    pay_day -= 28
+                                    pay_month += 1
+                                if pay_month <= 7:
+                                    odeme_tarihi = datetime.date(2026, pay_month, pay_day).isoformat()
+                        else:
+                            # Payment made
+                            desc = f"{c_ad} - Tedarikçi Ödemesi EFT ({month}. Ay - #{i})"
+                            tutar = round(random.uniform(5500.0, 29000.0) + (i * random.uniform(220.0, 950.0)), 2)
+                            tip = "alacak"
+                    
+                    cari_islemler.append((c_id, desc, tutar, tip, t_date, odeme_tarihi))
                 
-                if c_tip == 'musteri':
-                    if i % 2 == 1:
-                        # Sale/Receivable (randomized amount)
-                        desc = f"{c_ad} - Ürün Satış Faturası düzenlendi (İşlem #{i})"
-                        tutar = round(2000.0 + (i * random.randint(250, 450)) + random.random() * 99, 2)
-                        tip = "alacak"
-                    else:
-                        # Collection/Payment received
-                        desc = f"{c_ad} - Banka Havalesi İle Tahsilat (İşlem #{i})"
-                        tutar = round(1800.0 + (i * random.randint(240, 440)) + random.random() * 99, 2)
-                        tip = "borc"
-                else: # Supplier
-                    if i % 2 == 1:
-                        # Purchase/Payable
-                        desc = f"{c_ad} - Hammadde Satın Alım Faturası (İşlem #{i})"
-                        tutar = round(2500.0 + (i * random.randint(400, 600)) + random.random() * 99, 2)
-                        tip = "borc"
-                    else:
-                        # Payment made
-                        desc = f"{c_ad} - Tedarikçi Ödemesi EFT (İşlem #{i})"
-                        tutar = round(2400.0 + (i * random.randint(390, 590)) + random.random() * 99, 2)
-                        tip = "alacak"
-                
-                cari_islemler.append((c_id, desc, tutar, tip, t_date))
-                
-        cursor.executemany("INSERT INTO cari_islem (cari_id, tanim, tutar, tip, tarih) VALUES (?, ?, ?, ?, ?)", cari_islemler)
+        cursor.executemany("INSERT INTO cari_islem (cari_id, tanim, tutar, tip, tarih, odeme_tarihi) VALUES (?, ?, ?, ?, ?, ?)", cari_islemler)
         
         # Seed Kasa & Banka Hesap
         hesaplar = [
@@ -228,9 +344,9 @@ def init_db():
         cursor.execute("SELECT id, ad, tur, doviz_turu FROM kasa_banka_hesap")
         all_seeded_hesaplar = cursor.fetchall()
         
-        # Programmatic generation of 20 transactions per account (total 140)
+        # Generate 20 transactions per Account for EACH month starting from January 2026 to July 2026
+        # Months: 1, 2, 3, 4, 5, 6, 7. 20 * 7 = 140 transactions per account. Total = 7 * 140 = 980 transactions
         kasa_banka_islemler = []
-        k_start_date = datetime.date(2026, 5, 15)
         
         for hesap in all_seeded_hesaplar:
             h_id = hesap['id']
@@ -238,45 +354,46 @@ def init_db():
             h_tur = hesap['tur']
             h_doviz = hesap['doviz_turu']
             
-            for i in range(1, 21):
-                date_diff = i * 3 + random.randint(-1, 1)
-                date_diff = max(1, date_diff)
-                t_date = (k_start_date + datetime.timedelta(days=date_diff)).isoformat()
-                
-                # Pick a random Cari to link to
-                linked_cari = random.choice(all_seeded_cariler)
-                cari_id = linked_cari['id']
-                cari_ad = linked_cari['ad']
-                
-                if h_tur == 'kasa':
-                    if i % 2 == 1:
-                        # Cash income / receipt
-                        tanim = f"Nakit Tahsilat - {cari_ad} (İşlem #{i})"
-                        tutar = round(500.0 + (i * random.randint(100, 150)) + random.random() * 50, 2)
-                        tip = 'giris'
-                        islem_turu = 'tahsilat'
-                    else:
-                        # Cash expense
-                        tanim = f"Nakit Ödeme (Ofis & Kırtasiye) - İşlem #{i}"
-                        tutar = round(150.0 + (i * random.randint(20, 40)) + random.random() * 20, 2)
-                        tip = 'cikis'
-                        islem_turu = 'gider'
-                        cari_id = None # Not related to a Cari
-                else: # Bank account
-                    if i % 2 == 1:
-                        # Bank transfer in
-                        tanim = f"{h_ad} Gelen EFT - {cari_ad} (Fatura Ödemesi #{i})"
-                        tutar = round(5000.0 + (i * random.randint(1200, 1800)) + random.random() * 500, 2)
-                        tip = 'giris'
-                        islem_turu = 'tahsilat'
-                    else:
-                        # Bank transfer out
-                        tanim = f"{h_ad} Gönderilen EFT - {cari_ad} (Tedarikçi Ödemesi #{i})"
-                        tutar = round(3000.0 + (i * random.randint(700, 1100)) + random.random() * 300, 2)
-                        tip = 'cikis'
-                        islem_turu = 'odeme'
-                
-                kasa_banka_islemler.append((h_id, cari_id, tanim, tutar, tip, t_date, islem_turu))
+            for month in range(1, 8): # Jan (1) to Jul (7)
+                for i in range(1, 21): # 20 transactions per month
+                    day = i + random.randint(0, 8)
+                    day = min(28, max(1, day))
+                    t_date = datetime.date(2026, month, day).isoformat()
+                    
+                    # Pick a random Cari to link to
+                    linked_cari = random.choice(all_seeded_cariler)
+                    cari_id = linked_cari['id']
+                    cari_ad = linked_cari['ad']
+                    
+                    if h_tur == 'kasa':
+                        if i % 2 == 1:
+                            # Cash income / receipt
+                            tanim = f"Nakit Tahsilat - {cari_ad} ({month}. Ay - #{i})"
+                            tutar = round(random.uniform(1000.0, 6000.0) + (i * random.uniform(50.0, 200.0)), 2)
+                            tip = 'giris'
+                            islem_turu = 'tahsilat'
+                        else:
+                            # Cash expense
+                            tanim = f"Nakit Ödeme (Ofis & Kırtasiye) ({month}. Ay - #{i})"
+                            tutar = round(random.uniform(300.0, 2500.0) + (i * random.uniform(15.0, 80.0)), 2)
+                            tip = 'cikis'
+                            islem_turu = 'gider'
+                            cari_id = None # Not related to a Cari
+                    else: # Bank account
+                        if i % 2 == 1:
+                            # Bank transfer in
+                            tanim = f"{h_ad} Gelen EFT - {cari_ad} ({month}. Ay - #{i})"
+                            tutar = round(random.uniform(12000.0, 70000.0) + (i * random.uniform(600.0, 2500.0)), 2)
+                            tip = 'giris'
+                            islem_turu = 'tahsilat'
+                        else:
+                            # Bank transfer out
+                            tanim = f"{h_ad} Gönderilen EFT - {cari_ad} ({month}. Ay - #{i})"
+                            tutar = round(random.uniform(9000.0, 50000.0) + (i * random.uniform(500.0, 2000.0)), 2)
+                            tip = 'cikis'
+                            islem_turu = 'odeme'
+                    
+                    kasa_banka_islemler.append((h_id, cari_id, tanim, tutar, tip, t_date, islem_turu))
         
         cursor.executemany('''
             INSERT INTO kasa_banka_islem (hesap_id, cari_id, tanim, tutar, tip, tarih, islem_turu)
@@ -501,24 +618,24 @@ def get_dashboard_data():
     
     # 3. Stok calculations
     cursor.execute("SELECT COUNT(*) FROM stok")
-    toplam_urun_cesidi = 1237 + cursor.fetchone()[0]
+    toplam_urun_cesidi = cursor.fetchone()[0]
     
     cursor.execute("SELECT COUNT(*) FROM stok WHERE adet < 15")
-    kritik_stok_sayisi = 11 + cursor.fetchone()[0]
+    kritik_stok_sayisi = cursor.fetchone()[0]
     
     cursor.execute("SELECT COUNT(*) FROM stok WHERE adet = 0")
-    stoksuz_urun_sayisi = 3 + cursor.fetchone()[0]
+    stoksuz_urun_sayisi = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT SUM(adet) FROM stok")
+    total_stok_adet_db = cursor.fetchone()[0] or 0
+    depo_doluluk_orani = min(100.0, round((total_stok_adet_db / 5000.0) * 100, 1))
     
     # Categories distribution
     cursor.execute("SELECT kategori, SUM(adet) as total FROM stok GROUP BY kategori")
     cat_rows = cursor.fetchall()
     
     kategoriler = []
-    base_cats = {
-        "Elektronik": 0,
-        "Ofis Malzemeleri": 0,
-        "Aksesuar & Sarf": 0
-    }
+    base_cats = {}
     
     for row in cat_rows:
         cat_name = row['kategori']
@@ -534,22 +651,25 @@ def get_dashboard_data():
     
     # 4. Fatura ve Irsaliye calculations
     cursor.execute("SELECT COUNT(*) FROM fatura_irsaliye WHERE durum = 'Ödenmedi'")
-    odenmemis_fatura = 22 + cursor.fetchone()[0]
+    odenmemis_fatura = cursor.fetchone()[0]
     
     cursor.execute("SELECT COUNT(*) FROM fatura_irsaliye WHERE durum = 'Bekliyor'")
-    bekleyen_irsaliye = 4 + cursor.fetchone()[0]
+    bekleyen_irsaliye = cursor.fetchone()[0]
     
     cursor.execute("SELECT COUNT(*) FROM fatura_irsaliye")
-    kesilen_fatura_bu_ay = 108 + cursor.fetchone()[0]
+    kesilen_fatura_bu_ay = cursor.fetchone()[0]
     
     cursor.execute("SELECT SUM(tutar) FROM fatura_irsaliye WHERE durum != 'Bekliyor'")
     db_fatura_sum = cursor.fetchone()[0] or 0.0
-    aylik_fatura_tutari = 578000.0 + db_fatura_sum
+    aylik_fatura_tutari = db_fatura_sum
     
-    taslak_fatura = 8
+    cursor.execute("SELECT COUNT(*) FROM fatura_irsaliye WHERE durum = 'Taslak'")
+    taslak_fatura = cursor.fetchone()[0]
     
     cursor.execute("SELECT id, tanim, tutar, durum, tarih FROM fatura_irsaliye ORDER BY id DESC LIMIT 5")
     fatura_islemler = [dict(row) for row in cursor.fetchall()]
+    cursor.execute("SELECT id, ad FROM cari")
+    tum_cariler = [dict(row) for row in cursor.fetchall()]
     
     conn.close()
     
@@ -559,7 +679,8 @@ def get_dashboard_data():
             "tedarikci_sayisi": tedarikci_sayisi,
             "toplam_alacak": toplam_alacak,
             "toplam_borc": toplam_borc,
-            "son_islemler": cari_islemler
+            "son_islemler": cari_islemler,
+            "tum_liste": tum_cariler
         },
         "kasa_banka": {
             "kasa_bakiye": kasa_bakiye,
@@ -574,7 +695,7 @@ def get_dashboard_data():
             "toplam_urun_cesidi": toplam_urun_cesidi,
             "kritik_stok_sayisi": kritik_stok_sayisi,
             "stoksuz_urun_sayisi": stoksuz_urun_sayisi,
-            "depo_doluluk_orani": 68.5,
+            "depo_doluluk_orani": depo_doluluk_orani,
             "kategoriler": kategoriler,
             "son_islemler": stok_islemler
         },
@@ -591,10 +712,42 @@ def get_dashboard_data():
 def get_all_cariler():
     conn = get_db_connection()
     cursor = conn.cursor()
+    # Fetch cariler
     cursor.execute("SELECT id, ad, tip, limit_val, vergi_no, vergi_dairesi, yetkili_kisi, eposta, telefon, il, ilce, mahalle, adres_detay, cari_grubu, kredibilite FROM cari ORDER BY id ASC")
-    rows = [dict(row) for row in cursor.fetchall()]
+    cariler = [dict(row) for row in cursor.fetchall()]
+    
+    # Calculate dynamic balance for each cari
+    for c in cariler:
+        c_id = c['id']
+        is_musteri = c['tip'] == 'musteri'
+        
+        cursor.execute("SELECT tutar, tip FROM cari_islem WHERE cari_id = ?", (c_id,))
+        transactions = cursor.fetchall()
+        
+        total_invoices = 0
+        total_payments = 0
+        
+        for t in transactions:
+            t_tip = t['tip']
+            t_tutar = t['tutar'] or 0.0
+            
+            if is_musteri:
+                if t_tip == 'alacak':
+                    total_invoices += t_tutar
+                elif t_tip == 'borc':
+                    total_payments += t_tutar
+            else:
+                if t_tip == 'borc':
+                    total_invoices += t_tutar
+                elif t_tip == 'alacak':
+                    total_payments += t_tutar
+                    
+        # Net balance: for customer positive means receivable (alacak), negative means overpaid/payable.
+        # for supplier positive means debt (borc), negative means overpaid/receivable.
+        c['bakiye'] = round(total_invoices - total_payments, 2)
+        
     conn.close()
-    return rows
+    return cariler
 
 def get_cari_detail_and_history(cari_id):
     conn = get_db_connection()
@@ -608,9 +761,71 @@ def get_cari_detail_and_history(cari_id):
         return None
     cari_info = dict(row)
     
-    # 2. Fetch specific past transactions linked to this Cari
-    cursor.execute("SELECT id, tanim, tutar, tip, tarih FROM cari_islem WHERE cari_id = ? ORDER BY tarih DESC, id DESC", (cari_id,))
-    transactions = [dict(r) for r in cursor.fetchall()]
+    # 2. Fetch Invoices and Payments combined via UNION
+    # We map tip to 'borc' or 'alacak' based on cari tip
+    # For a Müşteri: satis_faturasi -> borc, tahsilat -> alacak
+    # For a Tedarikçi: alis_faturasi -> alacak, odeme -> borc
+    query = """
+        SELECT 
+            'fatura' as kaynak,
+            id as belge_id,
+            belge_no,
+            tarih,
+            tanim as aciklama,
+            tutar,
+            durum,
+            belge_turu as islem_tipi
+        FROM fatura_irsaliye
+        WHERE cari_id = ?
+        
+        UNION ALL
+        
+        SELECT 
+            'odeme' as kaynak,
+            id as belge_id,
+            'MKZ-' || id as belge_no,
+            tarih,
+            tanim as aciklama,
+            tutar,
+            'Onaylandı' as durum,
+            islem_turu as islem_tipi
+        FROM kasa_banka_islem
+        WHERE cari_id = ?
+        
+        ORDER BY tarih DESC, belge_id DESC
+    """
+    cursor.execute(query, (cari_id, cari_id))
+    raw_transactions = [dict(r) for r in cursor.fetchall()]
+    
+    # Add legacy cari_islem just in case there are old seeded data
+    cursor.execute("SELECT id as belge_id, 'cari_islem' as kaynak, 'ESKI-' || id as belge_no, tarih, tanim as aciklama, tutar, 'Eski Kayıt' as durum, tip as islem_tipi FROM cari_islem WHERE cari_id = ?", (cari_id,))
+    legacy = [dict(r) for r in cursor.fetchall()]
+    
+    transactions = raw_transactions + legacy
+    # Sort again in Python to merge legacy dates properly
+    transactions.sort(key=lambda x: (x['tarih'], x['belge_id']), reverse=True)
+    
+    # Determine borc/alacak for UI rendering
+    is_musteri = (cari_info['tip'] == 'musteri')
+    
+    for t in transactions:
+        t_tip = t['islem_tipi']
+        kaynak = t['kaynak']
+        
+        # Default mapping
+        if kaynak == 'cari_islem':
+            t['yon'] = t_tip # 'borc' or 'alacak'
+        else:
+            if is_musteri:
+                if t_tip in ['satis_faturasi', 'borc']: t['yon'] = 'borc'
+                elif t_tip in ['tahsilat', 'alacak']: t['yon'] = 'alacak'
+                elif t_tip == 'irsaliye': t['yon'] = 'bilgi'
+                else: t['yon'] = 'bilgi'
+            else:
+                if t_tip in ['alis_faturasi', 'alacak']: t['yon'] = 'alacak'
+                elif t_tip in ['odeme', 'borc']: t['yon'] = 'borc'
+                elif t_tip == 'irsaliye': t['yon'] = 'bilgi'
+                else: t['yon'] = 'bilgi'
     
     conn.close()
     return {
@@ -847,24 +1062,15 @@ def get_monthly_liquidity_data():
         "09": "Eylül", "10": "Ekim", "11": "Kasım", "12": "Aralık"
     }
     
-    default_data = {
-        "01": (150000, 120000), "02": (180000, 110000), "03": (220000, 150000),
-        "04": (290000, 210000), "05": (270000, 180000), "06": (310000, 220000),
-        "07": (0, 0)
-    }
-    
     for row in rows:
         ay_str = row['ay']
         if '-' in ay_str:
             month_part = ay_str.split('-')[1]
-            if month_part in default_data:
-                default_data[month_part] = (row['gelir'] or 0.0, row['gider'] or 0.0)
+            if month_part in month_names:
+                months.append(month_names[month_part] + " " + ay_str.split('-')[0])
+                gelirler.append(row['gelir'] or 0.0)
+                giderler.append(row['gider'] or 0.0)
     
-    for m_code in sorted(default_data.keys()):
-        months.append(month_names[m_code])
-        gelirler.append(default_data[m_code][0])
-        giderler.append(default_data[m_code][1])
-        
     conn.close()
     return {
         "labels": months,
@@ -911,3 +1117,233 @@ def add_fatura_record(unvan, tutar, tip):
     
     conn.commit()
     conn.close()
+
+def get_fatura_irsaliye_list(start_date=None, end_date=None, durum=None, tip=None):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query = "SELECT id, cari_id, belge_no, belge_turu, tanim, tutar, durum, tarih FROM fatura_irsaliye WHERE 1=1"
+    params = []
+    
+    if start_date:
+        query += " AND tarih >= ?"
+        params.append(start_date)
+    if end_date:
+        query += " AND tarih <= ?"
+        params.append(end_date)
+    if durum and durum != 'tumu':
+        query += " AND durum = ?"
+        params.append(durum)
+        
+    query += " ORDER BY id DESC"
+    cursor.execute(query, params)
+    rows = [dict(row) for row in cursor.fetchall()]
+    
+    result = []
+    for r in rows:
+        tanim = r['tanim']
+        tutar = float(r['tutar'] or 0)
+        
+        belge_turu_db = r['belge_turu']
+        belge_no_db = r['belge_no']
+        
+        if belge_turu_db:
+            belge_turu = belge_turu_db
+            if belge_turu == 'irsaliye': belge_label = "Sevk İrsaliyesi"
+            elif belge_turu == 'alis_faturasi': belge_label = "Alış Faturası"
+            elif belge_turu == 'irsaliyeli_fatura': belge_label = "İrsaliyeli Fatura"
+            else: belge_label = "Satış Faturası"
+        else:
+            if "Sevk İrsaliyesi" in tanim or "IR-" in tanim or "Sevkiyat" in tanim:
+                belge_turu = "irsaliye"
+                belge_label = "Sevk İrsaliyesi"
+            elif "Alış" in tanim or "A00" in tanim:
+                belge_turu = "alis"
+                belge_label = "Alış Faturası"
+            elif "İrsaliyeli" in tanim or "IF-" in tanim:
+                belge_turu = "irsaliyeli_fatura"
+                belge_label = "İrsaliyeli Fatura"
+            else:
+                belge_turu = "satis"
+                belge_label = "Satış Faturası"
+                
+        if tip and tip != 'tumu':
+            if tip == 'irsaliye' and belge_turu not in ['irsaliye', 'irsaliyeli_fatura']:
+                continue
+            elif tip == 'satis' and belge_turu not in ['satis', 'satis_faturasi']:
+                continue
+            elif tip == 'alis' and belge_turu not in ['alis', 'alis_faturasi']:
+                continue
+
+        belge_no = belge_no_db if belge_no_db else f"DOC-{r['id']:04d}"
+        unvan = "Genel Cari"
+        aciklama = tanim
+
+        if " — " in tanim:
+            parts = tanim.split(" — ", 1)
+            if not belge_no_db: belge_no = parts[0].strip()
+            rest = parts[1].strip()
+            if " | " in rest:
+                sub_parts = rest.split(" | ", 1)
+                unvan = sub_parts[0].strip()
+                aciklama = sub_parts[1].strip()
+            else:
+                unvan = rest
+                aciklama = rest
+        elif " - " in tanim:
+            parts = tanim.split(" - ", 1)
+            if not belge_no_db: belge_no = parts[0].strip()
+            rest = parts[1].strip()
+            if " | " in rest:
+                sub_parts = rest.split(" | ", 1)
+                unvan = sub_parts[0].strip()
+                aciklama = sub_parts[1].strip()
+            else:
+                unvan = rest
+                aciklama = rest
+        
+        r['cari_id'] = r['cari_id']
+
+        r['belge_no'] = belge_no
+        r['unvan'] = unvan
+        r['aciklama'] = aciklama
+        r['belge_turu'] = belge_turu
+        r['belge_label'] = belge_label
+        result.append(r)
+        
+    conn.close()
+    return result
+
+def add_fatura_irsaliye_full(cari_id, unvan, belge_no, tutar, tip, durum, tarih, aciklama=None):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT COUNT(*) FROM fatura_irsaliye")
+    count = cursor.fetchone()[0] + 115
+    
+    if tip == 'irsaliye':
+        prefix = "IR-2026-"
+        label = "Sevk İrsaliyesi"
+        belge_turu = "irsaliye"
+    elif tip == 'alis':
+        prefix = "FT-2026-A"
+        label = "Alış Faturası"
+        belge_turu = "alis_faturasi"
+    elif tip == 'irsaliyeli_fatura':
+        prefix = "IF-2026-"
+        label = "İrsaliyeli Fatura"
+        belge_turu = "irsaliyeli_fatura"
+    else:
+        prefix = "FT-2026-S"
+        label = "Satış Faturası"
+        belge_turu = "satis_faturasi"
+        
+    code = belge_no if belge_no else f"{prefix}{count:05d}"
+    detail_aciklama = aciklama if aciklama else label
+    log_tanim = f"{code} — {unvan} | {detail_aciklama}"
+        
+    cursor.execute("INSERT INTO fatura_irsaliye (cari_id, belge_no, belge_turu, tanim, tutar, durum, tarih) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                   (cari_id, code, belge_turu, log_tanim, float(tutar), durum, tarih))
+    new_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return new_id
+
+def update_fatura_status(fatura_id, yeni_durum):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE fatura_irsaliye SET durum = ? WHERE id = ?", (yeni_durum, fatura_id))
+    conn.commit()
+def delete_fatura_record(fatura_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM fatura_irsaliye WHERE id = ?", (fatura_id,))
+    conn.commit()
+    conn.close()
+
+# --- STOK & DEPO YÖNETİMİ ---
+def get_stok_liste():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, ad, kategori, adet FROM stok ORDER BY ad ASC")
+    data = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return data
+
+def add_stok(ad, kategori, adet):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO stok (ad, kategori, adet) VALUES (?, ?, ?)", (ad, kategori, int(adet)))
+    new_id = cursor.lastrowid
+    
+    if int(adet) > 0:
+        import datetime
+        today = datetime.datetime.now().strftime("%Y-%m-%d")
+        fis_no = f"ACILIS-{new_id:04d}"
+        cursor.execute("""
+            INSERT INTO depo_hareket (stok_id, fis_no, tip, miktar, tarih, aciklama) 
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (new_id, fis_no, 'giris', int(adet), today, 'Açılış stoğu'))
+        
+    conn.commit()
+    conn.close()
+    return new_id
+
+def get_stok_hareketler():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT h.id, h.stok_id, s.ad as stok_ad, h.fis_no, h.tip, h.miktar, h.tarih, h.aciklama 
+        FROM depo_hareket h
+        JOIN stok s ON h.stok_id = s.id
+        ORDER BY h.id DESC LIMIT 200
+    """)
+    data = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return data
+
+def add_stok_hareket(stok_id, tip, miktar, aciklama):
+    import datetime
+    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Generate simple fis_no
+    cursor.execute("SELECT COUNT(*) FROM depo_hareket")
+    count = cursor.fetchone()[0] + 1
+    fis_no = f"FIS-{count:05d}"
+    
+    # Check current stock
+    cursor.execute("SELECT adet FROM stok WHERE id = ?", (stok_id,))
+    stok_row = cursor.fetchone()
+    if not stok_row:
+        conn.close()
+        return False, "Stok bulunamadı"
+        
+    mevcut_adet = stok_row['adet']
+    miktar = int(miktar)
+    
+    # Calculate new stock
+    yeni_adet = mevcut_adet
+    if tip in ['giris', 'sayim_fazlasi']:
+        yeni_adet += miktar
+    elif tip in ['cikis', 'fire']:
+        yeni_adet -= miktar
+        
+    if yeni_adet < 0:
+        conn.close()
+        return False, "Stok miktarı eksiye düşemez"
+        
+    # Insert movement
+    cursor.execute("""
+        INSERT INTO depo_hareket (stok_id, fis_no, tip, miktar, tarih, aciklama) 
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (stok_id, fis_no, tip, miktar, today, aciklama))
+    
+    # Update main stock
+    cursor.execute("UPDATE stok SET adet = ? WHERE id = ?", (yeni_adet, stok_id))
+    
+    conn.commit()
+    conn.close()
+    return True, "Hareket işlendi"

@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { text: "Kasa & Banka İşlem Geçmişi", keywords: ["kasa hareketleri", "banka hareketleri", "kasa özet", "banka özet", "kasa banka"], action: () => { location.href = '/kasa-hareketler'; }, icon: "fa-solid fa-clock-rotate-left" },
         { text: "Yeni Stok Ürünü Ekle", keywords: ["stok ekle", "yeni ürün", "stok girişi", "ürün ekle"], action: () => showSectionDetail('stok'), icon: "fa-solid fa-box-open" },
         { text: "Yeni Fatura Düzenle", keywords: ["fatura kes", "fatura oluştur", "yeni fatura", "fatura ekle"], action: () => showSectionDetail('fatura'), icon: "fa-solid fa-file-invoice" },
+        { text: "Fatura & İrsaliye Ekranını Aç", keywords: ["fatura listesi", "irsaliye takibi", "fatura ve irsaliye", "irsaliye ekle", "fatura gör", "fatura takibi"], action: () => { location.href = '/fatura-irsaliye'; }, icon: "fa-solid fa-file-invoice-dollar" },
         { text: "Mutabakat & Ödeme Raporu", keywords: ["mutabakat", "ödeme planı", "gelecek ödemeler", "rapor", "mutabakat raporu"], action: () => { location.href = '/mutabakat-raporu'; }, icon: "fa-solid fa-calendar-days" },
         { text: "Son İşlemler & Özet Ekranı", keywords: ["son işlemler", "cari hareketler", "özet", "hareketler"], action: () => { location.href = '/cari-hareketler'; }, icon: "fa-solid fa-clock-rotate-left" }
     ];
@@ -160,7 +161,7 @@ async function refreshDashboard() {
         Swal.fire({
             icon: 'error',
             title: 'Hata',
-            text: 'Veriler sunucudan alınamadı. Lütfen backend sunucunuzun çalıştığından emin olun.',
+            text: 'Veriler sunucudan alınamadı. Hata Detayı: ' + error.message,
             confirmButtonColor: '#0078d4'
         });
     }
@@ -253,11 +254,11 @@ function initCharts() {
     charts.kasa = new Chart(ctxKasa, {
         type: 'line',
         data: {
-            labels: (dashboardData.kasa_banka && dashboardData.kasa_banka.monthly_chart) ? dashboardData.kasa_banka.monthly_chart.labels : ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz'],
+            labels: (dashboardData.kasa_banka && dashboardData.kasa_banka.monthly_chart) ? dashboardData.kasa_banka.monthly_chart.labels : [],
             datasets: [
                 {
                     label: 'Gelirler',
-                    data: (dashboardData.kasa_banka && dashboardData.kasa_banka.monthly_chart) ? dashboardData.kasa_banka.monthly_chart.gelirler : [150000, 180000, 220000, 290000, 270000, 310000, dashboardData.kasa_banka.aylik_gelir],
+                    data: (dashboardData.kasa_banka && dashboardData.kasa_banka.monthly_chart) ? dashboardData.kasa_banka.monthly_chart.gelirler : [],
                     borderColor: '#2a9d8f',
                     backgroundColor: 'rgba(42, 157, 143, 0.1)',
                     fill: true,
@@ -267,7 +268,7 @@ function initCharts() {
                 },
                 {
                     label: 'Giderler',
-                    data: (dashboardData.kasa_banka && dashboardData.kasa_banka.monthly_chart) ? dashboardData.kasa_banka.monthly_chart.giderler : [120000, 110000, 150000, 210000, 180000, 220000, dashboardData.kasa_banka.aylik_gider],
+                    data: (dashboardData.kasa_banka && dashboardData.kasa_banka.monthly_chart) ? dashboardData.kasa_banka.monthly_chart.giderler : [],
                     borderColor: '#ef4444',
                     backgroundColor: 'rgba(239, 68, 68, 0.05)',
                     fill: true,
@@ -361,6 +362,10 @@ function initCharts() {
 
 // Show detailed page overlay modal
 function showSectionDetail(section) {
+    if (section === 'fatura') {
+        location.href = '/fatura-irsaliye?action=new';
+        return;
+    }
     currentSection = section;
     
     const tabsContainer = document.querySelector('.modal-tabs');
@@ -428,12 +433,7 @@ function setupModalUI() {
     } else if (currentSection === 'stok') {
         titleEl.textContent = 'Envanter & Stok Takibi';
         iconEl.classList.add('fa-box-open', 'icon-green');
-    } else if (currentSection === 'fatura') {
-        titleEl.textContent = 'Fatura ve İrsaliye İşlemleri';
-        iconEl.classList.add('fa-file-invoice-dollar', 'icon-purple');
     }
-    
-    renderModalData();
 }
 
 // Render dynamic lists inside detail modals
@@ -743,24 +743,121 @@ function generateFormFields() {
             </div>
         `;
     } else if (currentSection === 'fatura') {
+        let cariOptionsHtml = (dashboardData.cari && dashboardData.cari.tum_liste ? dashboardData.cari.tum_liste : []).map(c => `<option value="${c.ad}">${c.ad}</option>`).join('');
+
         fieldsContainer.innerHTML = `
-            <div class="form-group">
-                <label for="faturaUnvan">Cari Firma Ünvanı</label>
-                <input type="text" id="faturaUnvan" class="form-control" placeholder="Örn: Yıldırım Ticaret" required>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="faturaBelgeNo">Fatura / İrsaliye Seri & No</label>
+                    <input type="text" id="faturaBelgeNo" class="form-control" placeholder="Örn: FT-2026-000101">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="faturaTip">Belge İşlem Tipi *</label>
+                    <select id="faturaTip" class="form-control">
+                        <option value="satis">Satış Faturası (Gelir)</option>
+                        <option value="alis">Alış Faturası (Gider)</option>
+                        <option value="irsaliye">Sevk İrsaliyesi</option>
+                        <option value="irsaliyeli_fatura">İrsaliyeli Fatura</option>
+                    </select>
+                </div>
             </div>
+
             <div class="form-group">
-                <label for="faturaTip">Fatura Tipi</label>
-                <select id="faturaTip" class="form-control">
-                    <option value="satis">Satış Faturası (Gelir)</option>
-                    <option value="alis">Alış Faturası (Gider)</option>
-                </select>
+                <label for="faturaUnvan">Cari Firma / Müşteri Ünvanı *</label>
+                <input type="text" id="faturaUnvan" class="form-control" list="cariFirmaList" placeholder="Firma veya müşteri adı girin veya seçin..." required>
+                <datalist id="cariFirmaList">
+                    ${cariOptionsHtml}
+                </datalist>
             </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="faturaVergiDairesi">Vergi Dairesi</label>
+                    <input type="text" id="faturaVergiDairesi" class="form-control" placeholder="Örn: Büyük Mükellefler V.D.">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="faturaVergiNo">Vergi No / TCKN</label>
+                    <input type="text" id="faturaVergiNo" class="form-control" placeholder="Örn: 9876543210" maxlength="11">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="faturaEposta">E-posta Adresi</label>
+                    <input type="email" id="faturaEposta" class="form-control" placeholder="fatura@firma.com">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="faturaTelefon">Telefon</label>
+                    <input type="tel" id="faturaTelefon" class="form-control" placeholder="0532 000 00 00">
+                </div>
+            </div>
+
             <div class="form-group">
-                <label for="faturaTutar">KDV Dahil Toplam Tutar (TL)</label>
-                <input type="number" id="faturaTutar" class="form-control" min="0.01" step="0.01" placeholder="1250.00" required>
+                <label for="faturaAdres">Teslimat / Fatura Adresi</label>
+                <input type="text" id="faturaAdres" class="form-control" placeholder="Örn: Maslak Mah. Dereboyu Cad. No:42 Sarıyer / İstanbul">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="faturaTarih">Fatura Tarihi</label>
+                    <input type="date" id="faturaTarih" class="form-control" value="2026-07-24">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="faturaVade">Vade / Sevk Tarihi</label>
+                    <input type="date" id="faturaVade" class="form-control" value="2026-08-15">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="faturaKalemAciklama">Mal / Hizmet Kalem Açıklaması</label>
+                <input type="text" id="faturaKalemAciklama" class="form-control" placeholder="Örn: Yazılım Danışmanlık ve Donanım Kurulum Hizmet Bedeli">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="faturaMatrah">Matrah Tutar (TL) *</label>
+                    <input type="number" step="0.01" id="faturaMatrah" class="form-control" placeholder="1000.00" oninput="calcFaturaToplam()" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="faturaKdv">KDV Oranı (%)</label>
+                    <select id="faturaKdv" class="form-control" onchange="calcFaturaToplam()">
+                        <option value="20" selected>%20 KDV</option>
+                        <option value="10">%10 KDV</option>
+                        <option value="1">%1 KDV</option>
+                        <option value="0">%0 (Muaf)</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="faturaToplam">Genel Toplam (TL)</label>
+                    <input type="number" step="0.01" id="faturaToplam" class="form-control" placeholder="1200.00" style="font-weight: 700; color: var(--primary-color);" readonly>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="faturaDurum">İşlem / Ödeme Durumu</label>
+                    <select id="faturaDurum" class="form-control">
+                        <option value="Ödenmedi" selected>Ödenmedi</option>
+                        <option value="Ödendi">Ödendi</option>
+                        <option value="Bekliyor">Bekliyor (Yolda)</option>
+                        <option value="Teslim Edildi">Teslim Edildi</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="faturaNot">Not / Şartlar</label>
+                    <input type="text" id="faturaNot" class="form-control" placeholder="Örn: 30 Gün Vadeli Ödeme Şartı">
+                </div>
             </div>
         `;
     }
+}
+
+function calcFaturaToplam() {
+    const matrah = parseFloat(document.getElementById('faturaMatrah')?.value || 0);
+    const kdv = parseFloat(document.getElementById('faturaKdv')?.value || 20);
+    const toplam = matrah + (matrah * kdv / 100);
+    const toplamInput = document.getElementById('faturaToplam');
+    if (toplamInput) toplamInput.value = toplam.toFixed(2);
 }
 
 // Handle Form submits and POST to Backend APIs
@@ -804,10 +901,17 @@ async function handleFormSubmit(event) {
         };
     } else if (currentSection === 'fatura') {
         url = '/api/fatura/ekle';
+        const matrah = parseFloat(document.getElementById('faturaMatrah')?.value || 0);
+        const kdv = parseFloat(document.getElementById('faturaKdv')?.value || 20);
+        const tutar = matrah + (matrah * kdv / 100);
+
         payload = {
             unvan: document.getElementById('faturaUnvan').value,
             tip: document.getElementById('faturaTip').value,
-            tutar: document.getElementById('faturaTutar').value
+            tutar: tutar > 0 ? tutar : parseFloat(document.getElementById('faturaToplam')?.value || 0),
+            durum: document.getElementById('faturaDurum')?.value || 'Ödenmedi',
+            tarih: document.getElementById('faturaTarih')?.value || '2026-07-24',
+            aciklama: document.getElementById('faturaKalemAciklama')?.value || document.getElementById('faturaNot')?.value || ''
         };
     }
 

@@ -1,5 +1,6 @@
+from repositories.db_core import get_db_connection
 from flask import Blueprint, request, jsonify
-import db_manager
+
 from repositories import KasaBankaService
 
 kasa_bp = Blueprint('kasa', __name__)
@@ -10,7 +11,7 @@ def _svc() -> KasaBankaService:
     Her istek için bağımsız bir service örneği döner (thread-safe).
     Dependency Inversion: Router sqlite3'e değil, KasaBankaService soyutlamasına bağlıdır.
     """
-    return KasaBankaService(db_manager.get_db_connection)
+    return KasaBankaService(get_db_connection)
 
 
 # ---------------------------------------------------------------------------

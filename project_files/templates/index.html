@@ -1,29 +1,14 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bulutİş ERP - Akıllı Ön Muhasebe Yönetimi</title>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js -->
-    <script href="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
-<body class="dark-mode">
-    <!-- Background Decor (Glowing Orbs) -->
-    <div class="bg-orb orb-1"></div>
-    <div class="bg-orb orb-2"></div>
-    <div class="bg-orb orb-3"></div>
+{% extends 'base.html' %}
 
-    <!-- Main Wrapper -->
-    <div class="app-container">
+{% block title %}Bulutİş ERP - Akıllı Ön Muhasebe Yönetimi{% endblock %}
+
+{% block extra_head %}
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+
         <!-- Top Header -->
         <header class="app-header" id="mainHeader">
             <div class="header-left">
@@ -77,7 +62,7 @@
 
 
         <!-- Hızlı İşlem & Navigasyon Barı -->
-        <section class="operations-bar-card" id="operationsBar">
+                        <section class="operations-bar-card" id="operationsBar">
             <div class="operations-tabs">
                 <button class="op-tab-btn" onclick="toggleOperationsTab('cari')">
                     <i class="fa-solid fa-users icon-orange"></i> Cari İşlemleri <i class="fa-solid fa-chevron-down arrow"></i>
@@ -94,75 +79,67 @@
             </div>
             
             <div class="operations-bar-content" id="operationsContent">
-                <!-- Sub panels depending on active tab (Vertical E-commerce Category Style) -->
                 <div class="op-sub-panel" id="opPanel-cari">
                     <ul class="op-vertical-menu">
                         <li onclick="window.location.href='/cari-listesi'">
                             <span class="menu-label"><i class="fa-solid fa-list-check icon-orange menu-item-icon"></i> Cari Listesini Aç</span>
-                            <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                            
                         </li>
                         <li onclick="executeSubAction('cari', 'add')">
                             <span class="menu-label"><i class="fa-solid fa-user-plus icon-orange menu-item-icon"></i> Yeni Cari Kartı Oluştur</span>
-                            <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                            
                         </li>
                         <li onclick="window.location.href='/cari-hareketler'">
                             <span class="menu-label"><i class="fa-solid fa-clock-rotate-left icon-orange menu-item-icon"></i> Son İşlemler & Özet</span>
-                            <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                            
                         </li>
                         <li onclick="window.location.href='/mutabakat-raporu'">
                             <span class="menu-label"><i class="fa-solid fa-file-invoice icon-orange menu-item-icon"></i> Mutabakat & Denge Raporu</span>
-                            <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                            
                         </li>
                     </ul>
                 </div>
-
                 <div class="op-sub-panel" id="opPanel-kasa">
                     <ul class="op-vertical-menu">
                         <li onclick="location.href='/kasa-listesi'">
                             <span class="menu-label"><i class="fa-solid fa-wallet icon-blue menu-item-icon"></i> Kasa Listesini Aç</span>
-                            <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                            
                         </li>
                         <li onclick="location.href='/banka-listesi'">
                             <span class="menu-label"><i class="fa-solid fa-building-columns icon-blue menu-item-icon"></i> Banka Listesini Aç</span>
-                            <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                            
                         </li>
                         <li onclick="location.href='/kasa-hareketler'">
                             <span class="menu-label"><i class="fa-solid fa-clock-rotate-left icon-blue menu-item-icon"></i> Son İşlemler & Özet</span>
-                            <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                            
                         </li>
                     </ul>
                 </div>
-
                 <div class="op-sub-panel" id="opPanel-stok">
                     <ul class="op-vertical-menu">
-                        <li onclick="executeSubAction('stok', 'view')">
-                            <span class="menu-label"><i class="fa-solid fa-boxes-stacked icon-green menu-item-icon"></i> Stokları Aç (Envanter Listesi)</span>
-                            <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                        <li onclick="location.href='/stok-listesi'">
+                            <span class="menu-label"><i class="fa-solid fa-boxes-stacked icon-green menu-item-icon"></i> Stok Listesi ve Depo Kartları</span>
+                            
                         </li>
-                        <li onclick="executeSubAction('stok', 'add')">
-                            <span class="menu-label"><i class="fa-solid fa-circle-plus icon-green menu-item-icon"></i> Yeni Ürün Girişi</span>
-                            <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                        <li onclick="location.href='/stok-listesi?action=new'">
+                            <span class="menu-label"><i class="fa-solid fa-circle-plus icon-green menu-item-icon"></i> Yeni Stok Kartı Aç</span>
+                            
                         </li>
-                        <li onclick="triggerQuickReport('stok')">
-                            <span class="menu-label"><i class="fa-solid fa-triangle-exclamation icon-green menu-item-icon"></i> Kritik Stok & Uyarılar</span>
-                            <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                        <li onclick="location.href='/stok-listesi?tab=hareketler'">
+                            <span class="menu-label"><i class="fa-solid fa-truck-moving icon-green menu-item-icon"></i> Depo ve Stok Hareketleri</span>
+                            
                         </li>
                     </ul>
                 </div>
-
                 <div class="op-sub-panel" id="opPanel-fatura">
                     <ul class="op-vertical-menu">
-                        <li onclick="executeSubAction('fatura', 'view')">
-                            <span class="menu-label"><i class="fa-solid fa-file-invoice icon-purple menu-item-icon"></i> Faturaları Listele</span>
-                            <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                        <li onclick="location.href='/fatura-irsaliye'">
+                            <span class="menu-label"><i class="fa-solid fa-file-invoice icon-purple menu-item-icon"></i> Fatura & İrsaliye Ekranı (Tüm Listeler)</span>
+                            
                         </li>
-                        <li onclick="executeSubAction('fatura', 'add')">
-                            <span class="menu-label"><i class="fa-solid fa-file-signature icon-purple menu-item-icon"></i> Yeni Fatura Düzenle</span>
-                            <i class="fa-solid fa-chevron-right menu-arrow"></i>
-                        </li>
-                        <li onclick="triggerQuickReport('fatura')">
+                        <li onclick="location.href='/fatura-irsaliye?type=irsaliye'">
                             <span class="menu-label"><i class="fa-solid fa-truck-ramp-box icon-purple menu-item-icon"></i> İrsaliye ve Sevkiyat Takibi</span>
-                            <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                            
                         </li>
                     </ul>
                 </div>
@@ -207,33 +184,36 @@
             <section class="card-tile cari-tile" id="tileCari" onclick="location.href='/cari-listesi'">
                 <div class="tile-header">
                     <div class="tile-icon-wrapper">
-                        <i class="fa-solid fa-users"></i>
+                        <i class="fa-solid fa-users-viewfinder"></i>
                     </div>
                     <span class="tile-title">Cari Takibi (Müşteri & Tedarikçi)</span>
                     <span class="tile-tag tag-orange">Müşteri & Tedarikçi</span>
                 </div>
                 <div class="tile-body">
-                    <div class="metrics-row">
-                        <div class="metric-col">
-                            <span class="metric-label">Toplam Müşteri</span>
-                            <span class="metric-value" id="musteriSayisi">...</span>
+                    <div class="metrics-row" style="background: rgba(242, 92, 5, 0.05); padding: 14px 18px; border-radius: var(--border-radius-md); border: 1px solid rgba(242, 92, 5, 0.1); margin-bottom: 8px; justify-content: space-between;">
+                        <div class="metric-col" style="text-align: center;">
+                            <span class="metric-label" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Müşteri Portföyü</span>
+                            <span class="metric-value" id="musteriSayisi" style="font-size: 32px; color: var(--text-primary);">...</span>
                         </div>
-                        <div class="metric-col border-left">
-                            <span class="metric-label">Toplam Tedarikçi</span>
-                            <span class="metric-value" id="tedarikciSayisi">...</span>
-                        </div>
-                    </div>
-                    <div class="financials-preview">
-                        <div class="financial-stat">
-                            <span>Toplam Alacak</span>
-                            <span class="val-green text-bold" id="toplamAlacak">... TL</span>
-                        </div>
-                        <div class="financial-stat">
-                            <span>Toplam Borç</span>
-                            <span class="val-red text-bold" id="toplamBorc">... TL</span>
+                        <div style="width: 1px; background: rgba(242, 92, 5, 0.15); height: 44px; align-self: center;"></div>
+                        <div class="metric-col" style="text-align: center;">
+                            <span class="metric-label" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Tedarikçi Portföyü</span>
+                            <span class="metric-value" id="tedarikciSayisi" style="font-size: 32px; color: var(--text-primary);">...</span>
                         </div>
                     </div>
-                    <div class="mini-chart-container">
+                    
+                    <div class="financials-preview" style="border-radius: var(--border-radius-md); background: rgba(255, 255, 255, 0.5); padding: 16px; border: 1px solid rgba(0, 0, 0, 0.04); display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px;">
+                        <div class="financial-stat" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-circle-arrow-down" style="color: var(--success-color);"></i> Toplam Alacak</span>
+                            <span class="val-green text-bold" id="toplamAlacak" style="font-size: 15px; font-family: var(--font-heading);">... TL</span>
+                        </div>
+                        <div class="financial-stat" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-circle-arrow-up" style="color: var(--danger-color);"></i> Toplam Borç</span>
+                            <span class="val-red text-bold" id="toplamBorc" style="font-size: 15px; font-family: var(--font-heading);">... TL</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mini-chart-container" style="flex: 1; height: 110px; position: relative;">
                         <canvas id="chartCari"></canvas>
                     </div>
                 </div>
@@ -450,7 +430,7 @@
                         <i class="fa-solid fa-box-open icon-green"></i>
                         <span>Yeni Ürün Girişi</span>
                     </button>
-                    <button class="quick-action-card" onclick="triggerQuickAction('fatura')">
+                    <button class="quick-action-card" onclick="location.href='/fatura-irsaliye?action=new'">
                         <i class="fa-solid fa-file-invoice-dollar icon-purple"></i>
                         <span>Fatura Düzenle</span>
                     </button>
@@ -462,6 +442,8 @@
     <!-- SweetAlert2 script for gorgeous dialogs -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- App Logic -->
-    <script src="/static/js/app.js"></script>
-</body>
-</html>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/app.js"></script>
+{% endblock %}

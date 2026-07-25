@@ -1,20 +1,10 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banka Detayı - Bulutİş ERP</title>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Theme CSS -->
-    <link rel="stylesheet" href="/static/css/style.css">
-    <style>
+{% extends 'base.html' %}
+
+{% block title %}Banka Detayı - Bulutİş ERP{% endblock %}
+
+{% block extra_head %}
+<style>
+
         .details-grid {
             display: grid;
             grid-template-columns: 350px 1fr;
@@ -146,13 +136,12 @@
         .btn-action-trigger:hover {
             background: #005a9e;
         }
-    </style>
-</head>
-<body class="dark-mode">
-    <div class="bg-orb orb-1"></div>
-    <div class="bg-orb orb-2"></div>
     
-    <div class="app-container">
+</style>
+{% endblock %}
+
+{% block content %}
+
         <!-- Dashboard Header -->
         <header class="app-header shadow-sm">
             <div class="header-left">
@@ -160,7 +149,10 @@
                     <i class="fa-solid fa-chevron-left"></i>
                 </a>
             </div>
-            <div class="header-right">
+            <div class="header-right" style="display: flex; align-items: center; gap: 12px;">
+                <button class="icon-btn theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="Temayı Değiştir" style="background: rgba(0,120,212,0.1); border: 1px solid var(--border-color); color: var(--text-primary); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
                 <span class="page-indicator" style="font-family: var(--font-heading); font-weight: 700; color: var(--text-primary);"><i class="fa-solid fa-building-columns"></i> Banka Hesap Detay Kartı</span>
             </div>
         </header>
@@ -239,14 +231,38 @@
                 </div>
             </section>
         </div>
-    </div>
+    
+{% endblock %}
 
-    <script>
+{% block scripts %}
+<script>
         const hesapId = {{ hesap_id }};
         let currentCurrency = 'TRY';
         let allCariler = [];
 
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.getElementById('themeToggleBtn');
+            if (body.classList.contains('dark-mode')) {
+                body.classList.remove('dark-mode');
+                body.classList.add('light-mode');
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-sun"></i>';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
         window.onload = function() {
+            const btn = document.getElementById('themeToggleBtn');
+            if (document.body.classList.contains('dark-mode')) {
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-sun"></i>';
+            } else {
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+            }
             fetchCariler();
             fetchAccountDetails();
         }
@@ -427,5 +443,4 @@
             return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: currency }).format(val);
         }
     </script>
-</body>
-</html>
+{% endblock %}

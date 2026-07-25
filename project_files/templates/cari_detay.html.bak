@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cari Detay Kartı & İşlem Geçmişi - Bulutİş AI</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Global CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .app-container {
+            padding: 0 20px 20px 20px !important;
+        }
+        .app-header {
+            padding: 12px 18px !important;
+            margin: 10px 0 14px 0 !important;
+        }
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 120, 212, 0.1);
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+        }
+        .btn-back:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        /* Grid Layout for Cari Details */
+        .cari-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 768px) {
+            .cari-detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .detail-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius-md);
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+        }
+        .detail-card h3 {
+            font-family: var(--font-heading);
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .info-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+            font-size: 13px;
+        }
+        .info-list li:last-child {
+            border-bottom: none;
+        }
+        .info-list .label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .info-list .value {
+            color: var(--text-primary);
+            font-weight: 600;
+            text-align: right;
+            max-width: 60%;
+        }
+        
+        /* Balance display badge */
+        .balance-showcase {
+            margin-top: 14px;
+            padding: 12px;
+            border-radius: var(--border-radius-sm);
+            text-align: center;
+            font-weight: 700;
+            font-size: 15px;
+        }
+        
+        /* Transaction History list */
+        .history-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius-md);
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+        }
+        .history-card h3 {
+            font-family: var(--font-heading);
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Table Styles */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: var(--border-radius-sm);
+        }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+        .history-table th, .history-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .history-table th {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .history-table td {
+            color: var(--text-primary);
+        }
+        .history-table tr:hover {
+            background: rgba(255, 255, 255, 0.01);
+        }
+        
+        /* Badges */
+        .badge-type {
+            padding: 3px 8px;
+            border-radius: 50px;
+            font-size: 10px;
+            font-weight: 700;
+            display: inline-block;
+        }
+        .bg-alacak { background: rgba(16, 185, 129, 0.12); color: var(--green-primary); }
+        .bg-borc { background: rgba(239, 68, 68, 0.12); color: var(--danger-color); }
+        .text-center { text-align: center; }
+        .py-4 { padding-top: 24px; padding-bottom: 24px; }
+    </style>
+</head>
+<body class="light-mode">
+    <script>
+        if (localStorage.getItem('theme') !== 'light') {
+            document.body.classList.add('dark-mode');
+            document.body.classList.remove('light-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+            document.body.classList.add('light-mode');
+        }
+    </script>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    
+    <div class="app-container">
+        <!-- Dashboard Header -->
+        <header class="app-header shadow-sm">
+            <div class="header-left">
+                <a href="/cari-listesi" class="btn-back-home"><i class="fa-solid fa-arrow-left"></i></a>
+                <div class="app-logo" style="margin-left: 20px;">
+                    <i class="fa-solid fa-layer-group logo-icon"></i>
+                    <span class="logo-text">Bulut<span class="logo-accent">İş</span></span>
+                </div>
+            </div>
+            <div class="header-right">
+                <span class="page-indicator" style="font-family: var(--font-heading); font-weight: 700; color: var(--text-primary);"><i class="fa-solid fa-id-card"></i> Cari Hesap Detay Kartı</span>
+            </div>
+        </header>
+
+        <!-- BulutAI Akıllı Analiz & Kredibilite Barı -->
+        <section class="ai-widget-card" id="aiWidget">
+            <div class="ai-card-header">
+                <div class="ai-title-wrapper">
+                    <i class="fa-solid fa-wand-magic-sparkles ai-sparkles"></i>
+                    <span class="ai-title" id="aiWidgetTitle">BulutAI Cari Kredibilite Asistanı ve Risk Raporu</span>
+                </div>
+                <div class="ai-badges">
+                    <span class="ai-badge-live"><i class="fa-solid fa-bolt"></i> CANLI ANALİZ</span>
+                </div>
+            </div>
+            
+            <div class="ai-card-body">
+                <div class="ai-insights-list" id="aiInsightsList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; color: rgba(255, 255, 255, 0.95); font-size: 13px;">
+                    <div class="insight-item" id="aiInsightRating"><i class="fa-solid fa-circle-notch fa-spin"></i> Kredibilite hesaplanıyor...</div>
+                    <div class="insight-item" id="aiInsightPayments"><i class="fa-solid fa-circle-notch fa-spin"></i> Ödeme geçmişi taranıyor...</div>
+                    <div class="insight-item" id="aiInsightDelay"><i class="fa-solid fa-circle-notch fa-spin"></i> Vade gecikmeleri kontrol ediliyor...</div>
+                </div>
+
+                <!-- Chatbox to ask questions relating to the current Cari -->
+                <div class="ai-ask-container">
+                    <div class="ai-response-box" id="aiResponseBox" style="display: none; background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                        <div class="ai-text" id="aiResponseText" style="color: var(--text-primary); font-size: 12px;"></div>
+                    </div>
+                    <form class="ai-ask-form" onsubmit="event.preventDefault(); askCariAi();" style="display: flex; width: 100%; gap: 10px;">
+                        <input type="text" id="cariAiQuestionInput" placeholder="Bu cari hesap ile ilgili merak ettiğiniz finansal soruyu sorun... (Örn: Gecikmiş ödemesi var mı?)" style="flex: 1; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 50px; padding: 10px 20px; color: white; font-size: 13px; outline: none;">
+                        <button type="submit" class="ai-send-btn" style="background: white; color: #8b5cf6; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-paper-plane"></i></button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cari Summary Metrics Row -->
+        <div class="modal-metrics-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;">
+            <div class="metric-card" style="border-left: 5px solid var(--orange-primary); background: var(--card-bg); backdrop-filter: blur(16px); padding: 16px; display: flex; flex-direction: column; gap: 4px; border-radius: var(--border-radius-md);">
+                <span class="metric-title" id="lblMetric1" style="font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Toplam Satış (Fatura)</span>
+                <span class="metric-val" id="valMetric1" style="font-size: 20px; font-weight: 800; font-family: var(--font-heading); color: #ffffff !important;">0,00 ₺</span>
+            </div>
+            <div class="metric-card" style="border-left: 5px solid var(--primary-color); background: var(--card-bg); backdrop-filter: blur(16px); padding: 16px; display: flex; flex-direction: column; gap: 4px; border-radius: var(--border-radius-md);">
+                <span class="metric-title" id="lblMetric2" style="font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Toplam Tahsilat</span>
+                <span class="metric-val" id="valMetric2" style="font-size: 20px; font-weight: 800; font-family: var(--font-heading); color: #ffffff !important;">0,00 ₺</span>
+            </div>
+            <div class="metric-card" id="cardMetric3" style="border-left: 5px solid var(--purple-primary); background: var(--card-bg); backdrop-filter: blur(16px); padding: 16px; display: flex; flex-direction: column; gap: 4px; border-radius: var(--border-radius-md);">
+                <span class="metric-title" id="lblMetric3" style="font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Net Alacak Bakiyesi</span>
+                <span class="metric-val" id="valMetric3" style="font-size: 20px; font-weight: 800; font-family: var(--font-heading); color: #ffffff !important;">0,00 ₺</span>
+            </div>
+        </div>
+
+        <!-- Cari Info Row -->
+        <section class="cari-detail-grid">
+            <!-- Basic Information Card -->
+            <div class="detail-card shadow-sm">
+                <h3><i class="fa-solid fa-circle-info icon-orange"></i> Cari Kimlik Bilgileri</h3>
+                <ul class="info-list">
+                    <li>
+                        <span class="label">Cari ID</span>
+                        <span class="value" id="detCariId">-</span>
+                    </li>
+                    <li>
+                        <span class="label">Cari Ünvanı / Adı</span>
+                        <span class="value" id="detCariAd" style="font-weight: 700;">-</span>
+                    </li>
+                    <li>
+                        <span class="label">Cari Tipi</span>
+                        <span class="value" id="detCariTip">-</span>
+                    </li>
+                    <li>
+                        <span class="label">Yetkili Kişi</span>
+                        <span class="value" id="detYetkiliKisi">-</span>
+                    </li>
+                    <li>
+                        <span class="label">Cari Grubu / Sektör</span>
+                        <span class="value" id="detCariGrubu">-</span>
+                    </li>
+                    <li>
+                        <span class="label">Telefon</span>
+                        <span class="value" id="detTelefon">-</span>
+                    </li>
+                    <li>
+                        <span class="label">E-Posta</span>
+                        <span class="value" id="detEposta">-</span>
+                    </li>
+                    <li>
+                        <span class="label">Kredibilite Notu <i class="fa-solid fa-circle-question" id="kredibiliteHelp" style="cursor: pointer; color: var(--text-light); font-size: 11px;" title="Kredibilite nedir?"></i></span>
+                        <span class="value"><span class="badge-type" id="detKredibilite">-</span></span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Tax, Address & Balance Card -->
+            <div class="detail-card shadow-sm">
+                <h3><i class="fa-solid fa-map-location-dot icon-blue"></i> Adres, Vergi & Finansal Durum</h3>
+                <ul class="info-list">
+                    <li>
+                        <span class="label">Vergi Numarası</span>
+                        <span class="value" id="detVergiNo">-</span>
+                    </li>
+                    <li>
+                        <span class="label">Vergi Dairesi</span>
+                        <span class="value" id="detVergiDairesi">-</span>
+                    </li>
+                    <li>
+                        <span class="label">İl / Şehir</span>
+                        <span class="value" id="detIl">-</span>
+                    </li>
+                    <li>
+                        <span class="label">İlçe</span>
+                        <span class="value" id="detIlce">-</span>
+                    </li>
+                    <li>
+                        <span class="label">Mahalle</span>
+                        <span class="value" id="detMahalle">-</span>
+                    </li>
+                    <li>
+                        <span class="label">Açık Adres Detayı</span>
+                        <span class="value" id="detAdresDetay" style="font-size: 11px;">-</span>
+                    </li>
+                </ul>
+                <div class="balance-showcase" id="detBalanceBox">
+                    Devir Bakiyesi: 0.00 TL
+                </div>
+            </div>
+        </section>
+
+        <!-- Past Transactions Card -->
+        <main class="history-card shadow-sm">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 10px;">
+                <h3 style="margin: 0;"><i class="fa-solid fa-list-check icon-orange"></i> Cari İşlem Geçmişi (<span id="historyCount">0</span> Kayıt)</h3>
+                <div class="filter-box-wrapper" style="display: flex; align-items: center; gap: 8px;">
+                    <label for="monthFilter" style="font-size: 12px; font-weight: 600; color: var(--text-secondary);"><i class="fa-solid fa-calendar-days"></i> Dönem Filtresi:</label>
+                    <select id="monthFilter" onchange="filterByMonth()" style="background: var(--input-bg); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 50px; color: var(--text-primary); font-size: 12px; outline: none; cursor: pointer;">
+                        <option value="2026-07" selected>Temmuz 2026 (Bu Ay)</option>
+                        <option value="2026-06">Haziran 2026</option>
+                        <option value="2026-05">Mayıs 2026</option>
+                        <option value="2026-04">Nisan 2026</option>
+                        <option value="2026-03">Mart 2026</option>
+                        <option value="2026-02">Şubat 2026</option>
+                        <option value="2026-01">Ocak 2026</option>
+                        <option value="all">Tüm Geçmiş</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px; display: flex; gap: 14px; align-items: center; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border); width: fit-content;">
+                <span><strong>Gösterge Rehberi:</strong></span>
+                <span><span style="color: var(--green-primary); font-weight: 800;">G</span> : Gelir / Alacak</span>
+                <span><span style="color: var(--danger-color); font-weight: 800;">B</span> : Borç / Ödeme</span>
+            </div>
+
+            <div class="table-container">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>İşlem Tarihi</th>
+                            <th>İşlem / Açıklama</th>
+                            <th>Vade Tarihi</th>
+                            <th>Ödeme Tarihi</th>
+                            <th>Tutar (TRY - B/G)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr>
+                            <td colspan="6" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> İşlemler yükleniyor...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Client Script to load data -->
+    <script>
+        const cariId = {{ cari_id }};
+        let rawTransactions = [];
+        let isMusteriGlobal = true;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchCariDetail();
+        });
+
+        async function fetchCariDetail() {
+            try {
+                const response = await fetch(`/api/cari/detay/${cariId}`);
+                if (!response.ok) throw new Error();
+                const json = await response.json();
+                
+                if (json.success) {
+                    const c = json.cari;
+                    const isMusteri = c.tip === 'musteri';
+                    isMusteriGlobal = isMusteri;
+                    rawTransactions = json.transactions || [];
+                    
+                    // Populate basic info
+                    document.getElementById('detCariId').textContent = c.id;
+                    document.getElementById('detCariAd').textContent = c.ad;
+                    document.getElementById('detCariTip').textContent = isMusteri ? 'Müşteri' : 'Tedarikçi';
+                    document.getElementById('detYetkiliKisi').textContent = c.yetkili_kisi || '-';
+                    document.getElementById('detCariGrubu').textContent = c.cari_grubu || '-';
+                    document.getElementById('detTelefon').textContent = c.telefon || '-';
+                    document.getElementById('detEposta').textContent = c.eposta || '-';
+                    
+                    // Populate credibility
+                    const k = c.kredibilite || 'A';
+                    const kredEl = document.getElementById('detKredibilite');
+                    kredEl.textContent = k;
+                    if (k === 'A+') {
+                        kredEl.className = 'badge-type bg-alacak';
+                        kredEl.style = '';
+                    } else if (k === 'A') {
+                        kredEl.className = 'badge-type';
+                        kredEl.style.background = 'rgba(0, 120, 212, 0.12)';
+                        kredEl.style.color = 'var(--primary-color)';
+                        kredEl.style.border = '1px solid rgba(0, 120, 212, 0.2)';
+                    } else if (k === 'B') {
+                        kredEl.className = 'badge-type';
+                        kredEl.style.background = 'rgba(245, 158, 11, 0.12)';
+                        kredEl.style.color = 'var(--warning-color)';
+                        kredEl.style.border = '1px solid rgba(245, 158, 11, 0.2)';
+                    } else {
+                        kredEl.className = 'badge-type bg-borc';
+                        kredEl.style = '';
+                    }
+                    
+                    // Help tooltip click
+                    document.getElementById('kredibiliteHelp').onclick = (e) => {
+                        e.stopPropagation();
+                        Swal.fire({
+                            title: 'Kredibilite Nedir?',
+                            text: 'Kredibilite (Ödeme Gücü Değerliliği), bir cari hesabın geçmiş ödeme alışkanlıkları, borç sadakati ve finansal güvenilirliğini gösteren bir risk derecesidir. A+ en yüksek ödeme güvenilirliğini temsil ederken, D yüksek risk grubunu gösterir.',
+                            icon: 'info',
+                            confirmButtonColor: '#0078d4'
+                        });
+                    };
+                    
+                    // Populate address & tax info
+                    document.getElementById('detVergiNo').textContent = c.vergi_no || '-';
+                    document.getElementById('detVergiDairesi').textContent = c.vergi_dairesi || '-';
+                    document.getElementById('detIl').textContent = c.il || '-';
+                    document.getElementById('detIlce').textContent = c.ilce || '-';
+                    document.getElementById('detMahalle').textContent = c.mahalle || '-';
+                    document.getElementById('detAdresDetay').textContent = c.adres_detay || '-';
+                    
+                    // Label assignments based on type
+                    if (isMusteri) {
+                        document.getElementById('lblMetric1').textContent = "Toplam Satış (Fatura)";
+                        document.getElementById('lblMetric2').textContent = "Toplam Tahsilat";
+                        document.getElementById('lblMetric3').textContent = "Net Alacak Bakiyesi";
+                    } else {
+                        document.getElementById('lblMetric1').textContent = "Toplam Alış (Fatura)";
+                        document.getElementById('lblMetric2').textContent = "Toplam Ödeme";
+                        document.getElementById('lblMetric3').textContent = "Net Borç Bakiyesi";
+                    }
+
+                    // Process dynamic filtering & layout logic
+                    processMonthlyData();
+
+                    // Automatic calculation of credibility on page load
+                    analyzeAiCredit();
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('historyTableBody').innerHTML = `
+                    <tr><td colspan="6" class="text-center py-4" style="color: var(--danger-color);"><i class="fa-solid fa-circle-exclamation"></i> Veriler yüklenemedi.</td></tr>
+                `;
+            }
+        }
+
+        function processMonthlyData() {
+            const periodVal = document.getElementById('monthFilter').value;
+            const isMusteri = isMusteriGlobal;
+            
+            let devirInvoices = 0;
+            let devirPayments = 0;
+            
+            let filteredInvoices = 0;
+            let filteredPayments = 0;
+            
+            let transactionsToRender = [];
+            
+            rawTransactions.forEach(t => {
+                const tDate = t.tarih || "";
+                const tYearMonth = tDate.length >= 7 ? tDate.slice(0, 7) : "";
+                
+                // Devir Bakiyesi calculation: sum of all transactions PRIOR to selected month
+                if (periodVal !== 'all' && tYearMonth !== "" && tYearMonth < periodVal) {
+                    if (isMusteri) {
+                        if (t.yon === 'alacak') devirPayments += t.tutar;
+                        else if (t.yon === 'borc') devirInvoices += t.tutar;
+                    } else {
+                        if (t.yon === 'borc') devirPayments += t.tutar;
+                        else if (t.yon === 'alacak') devirInvoices += t.tutar;
+                    }
+                }
+                
+                // Transactions inside the selected month
+                if (periodVal === 'all' || tYearMonth === periodVal) {
+                    if (isMusteri) {
+                        if (t.yon === 'alacak') filteredPayments += t.tutar;
+                        else if (t.yon === 'borc') filteredInvoices += t.tutar;
+                    } else {
+                        if (t.yon === 'borc') filteredPayments += t.tutar;
+                        else if (t.yon === 'alacak') filteredInvoices += t.tutar;
+                    }
+                    transactionsToRender.push(t);
+                }
+            });
+            
+            // Update Top Metrics
+            document.getElementById('valMetric1').textContent = formatCurrency(filteredInvoices);
+            document.getElementById('valMetric2').textContent = formatCurrency(filteredPayments);
+            document.getElementById('valMetric3').textContent = formatCurrency(Math.abs(filteredInvoices - filteredPayments));
+            
+            const devirBalance = devirInvoices - devirPayments;
+            
+            // 2. Configure devir balance display box styling
+            const balBox = document.getElementById('detBalanceBox');
+            if (periodVal === 'all') {
+                balBox.className = "balance-showcase";
+                balBox.style.background = "rgba(255, 255, 255, 0.03)";
+                balBox.style.color = "var(--text-primary)";
+                balBox.style.border = "1px solid var(--border-color)";
+                balBox.textContent = `Tüm Geçmiş Dönemler Gösteriliyor (Devir Devre Dışı)`;
+            } else {
+                if (isMusteri) {
+                    if (devirBalance >= 0) {
+                        balBox.className = "balance-showcase musteri";
+                        balBox.style = "";
+                        balBox.textContent = `Önceki Aydan Devreden (Alacak): +${formatCurrency(devirBalance)}`;
+                    } else {
+                        balBox.className = "balance-showcase tedarikci";
+                        balBox.style = "";
+                        balBox.textContent = `Önceki Aydan Devreden (Borç/Fazla Ödeme): ${formatCurrency(devirBalance)}`;
+                    }
+                } else {
+                    if (devirBalance >= 0) {
+                        balBox.className = "balance-showcase tedarikci";
+                        balBox.style = "";
+                        balBox.textContent = `Önceki Aydan Devreden (Borç): -${formatCurrency(devirBalance)}`;
+                    } else {
+                        balBox.className = "balance-showcase musteri";
+                        balBox.style = "";
+                        balBox.textContent = `Önceki Aydan Devreden (Alacak/Fazla Ödeme): +${formatCurrency(Math.abs(devirBalance))}`;
+                    }
+                }
+            }
+            
+            // 3. Render transactions table list
+            renderTable(transactionsToRender);
+        }
+
+        function filterByMonth() {
+            processMonthlyData();
+        }
+
+        function renderTable(list) {
+            const tbody = document.getElementById('historyTableBody');
+            document.getElementById('historyCount').textContent = list.length;
+            
+            if (!list || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Filtrelenen döneme ait herhangi bir işlem kaydı bulunamadı.</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            list.forEach(item => {
+                const tr = document.createElement('tr');
+                const isAlacak = item.yon === 'alacak';
+                const isBilgi = item.yon === 'bilgi';
+                
+                // Format transaction date representation YYYY-MM-DD -> DD.MM.YYYY
+                const tDate = item.tarih || "";
+                const dateParts = tDate.split('-');
+                const formattedDate = dateParts.length === 3 ? `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}` : tDate;
+
+                let vadeText = '-';
+                let isDelayed = false;
+                
+                const isInvoice = item.kaynak === 'fatura' && item.islem_tipi !== 'irsaliye';
+                
+                let badgeClass = isBilgi ? 'badge-type' : (isAlacak ? 'badge-type bg-alacak' : 'badge-type bg-borc');
+                let badgeText = isBilgi ? 'Bilgi / İrsaliye' : (isAlacak ? (isMusteriGlobal ? 'Tahsilat (-)' : 'Fatura (+)') : (isMusteriGlobal ? 'Fatura (+)' : 'Ödeme (-)'));
+                
+                if (item.kaynak === 'fatura') badgeText = 'Fatura';
+                if (item.kaynak === 'odeme') badgeText = 'Ödeme / Tahsilat';
+                
+                let actionBtn = '';
+                if (item.kaynak === 'fatura' && item.durum !== 'Ödendi') {
+                    actionBtn = `<button class="btn-pay" onclick="payInvoice(${item.belge_id}, '${item.belge_no}', ${item.tutar})" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--green-primary); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">Ödeme Yap</button>`;
+                } else if (item.kaynak === 'fatura' && item.durum === 'Ödendi') {
+                    actionBtn = `<span style="color: var(--green-primary); font-size: 12px; font-weight: 700;"><i class="fa-solid fa-check"></i> Ödendi</span>`;
+                }
+                
+                if (isInvoice) {
+                    const transDate = new Date(item.tarih);
+                    const dueDate = new Date(transDate);
+                    dueDate.setDate(dueDate.getDate() + 30); // 30 days payment term
+                    
+                    const dd = String(dueDate.getDate()).padStart(2, '0');
+                    const mm = String(dueDate.getMonth() + 1).padStart(2, '0');
+                    const yyyy = dueDate.getFullYear();
+                    vadeText = `${dd}.${mm}.${yyyy}`;
+                    
+                    if (item.durum !== 'Ödendi' && new Date() > dueDate) {
+                        isDelayed = true;
+                    }
+                }
+                
+                let rowBg = "";
+                let rowColor = "";
+                if (isDelayed) {
+                    rowBg = "rgba(239, 68, 68, 0.06)";
+                    rowColor = "var(--danger-color)";
+                } else if (item.kaynak === 'fatura' && item.durum === 'Ödendi') {
+                    rowBg = "rgba(16, 185, 129, 0.03)";
+                }
+                
+                if (rowBg) {
+                    tr.style.background = rowBg;
+                }
+                if (rowColor) {
+                    tr.style.color = rowColor;
+                }
+                
+                let colorClass = isBilgi ? '' : (isAlacak ? 'color: var(--green-primary); font-weight: 700;' : 'color: var(--danger-color); font-weight: 700;');
+                
+                tr.innerHTML = `
+                    <td style="white-space: nowrap;"><i class="fa-regular fa-calendar" style="color: var(--text-secondary); margin-right: 6px;"></i> ${formattedDate}</td>
+                    <td><span class="${badgeClass}">${badgeText}</span></td>
+                    <td style="font-weight: 500;">
+                        ${item.belge_no && item.belge_no !== 'null' ? '<strong>'+item.belge_no+'</strong> - ' : ''}${item.aciklama}
+                        ${isDelayed ? '<span style="color:var(--danger-color); font-size: 11px; margin-left:8px; border:1px solid var(--danger-color); padding: 2px 6px; border-radius: 10px;"><i class="fa-solid fa-triangle-exclamation"></i> Gecikmiş Vade</span>' : ''}
+                    </td>
+                    <td style="${colorClass}">${formatCurrency(item.tutar)}</td>
+                    <td>${item.kaynak === 'fatura' ? vadeText : '-'}</td>
+                    <td class="text-center">${actionBtn}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function payInvoice(fatura_id, belge_no, tutar) {
+            Swal.fire({
+                title: 'Fatura Ödemesi / Tahsilatı',
+                text: \`\${belge_no} numaralı faturanın \${tutar} ₺ tutarındaki ödemesini gerçekleştirmek istiyor musunuz?\`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Evet, Ödemeyi İşle',
+                cancelButtonText: 'Vazgeç',
+                confirmButtonColor: '#10b981'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    // API Call to process payment
+                    try {
+                        const formData = new FormData();
+                        formData.append('cari_id', cariId);
+                        formData.append('fatura_id', fatura_id);
+                        formData.append('tutar', tutar);
+                        formData.append('tip', isMusteriGlobal ? 'gelir' : 'gider');
+                        formData.append('tanim', belge_no + ' Nolu Fatura Tahsilatı/Ödemesi');
+                        
+                        const res = await fetch('/api/fatura/ode', { method: 'POST', body: formData });
+                        const data = await res.json();
+                        
+                        if (data.success) {
+                            Swal.fire('Başarılı', 'Ödeme başarıyla kasaya aktarıldı ve fatura kapatıldı.', 'success');
+                            fetchCariDetail();
+                        } else {
+                            Swal.fire('Hata', 'İşlem sırasında bir hata oluştu.', 'error');
+                        }
+                    } catch (e) {
+                        Swal.fire('Hata', 'Sunucuya bağlanılamadı.', 'error');
+                    }
+                }
+            });
+        }
+
+        async function analyzeAiCredit() {
+            try {
+                const response = await fetch('/api/ai/kredibilite-analiz', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cari_id: cariId })
+                });
+                if (!response.ok) throw new Error();
+                const json = await response.json();
+                
+                if (json.success) {
+                    // Update credibility badge on screen dynamically
+                    const kredEl = document.getElementById('detKredibilite');
+                    const k = json.kredibilite;
+                    kredEl.textContent = k;
+                    if (k === 'A+') {
+                        kredEl.className = 'badge-type bg-alacak';
+                        kredEl.style = '';
+                    } else if (k === 'A') {
+                        kredEl.className = 'badge-type';
+                        kredEl.style.background = 'rgba(0, 120, 212, 0.12)';
+                        kredEl.style.color = 'var(--primary-color)';
+                        kredEl.style.border = '1px solid rgba(0, 120, 212, 0.2)';
+                    } else if (k === 'B') {
+                        kredEl.className = 'badge-type';
+                        kredEl.style.background = 'rgba(245, 158, 11, 0.12)';
+                        kredEl.style.color = 'var(--warning-color)';
+                        kredEl.style.border = '1px solid rgba(245, 158, 11, 0.2)';
+                    } else {
+                        kredEl.className = 'badge-type bg-borc';
+                        kredEl.style = '';
+                    }
+                    
+                    // Bind dynamic insights row by row matching premium screenshot
+                    document.getElementById('aiInsightRating').innerHTML = `<i class="fa-solid fa-circle-info" style="color: #10b981; margin-right: 8px;"></i> Cari kredibilite derecesi <strong>${k}</strong> olarak belirlendi. Risk durumu: <strong>${json.score_desc}</strong>`;
+                    document.getElementById('aiInsightPayments').innerHTML = `<i class="fa-solid fa-file-invoice-dollar" style="color: #3b82f6; margin-right: 8px;"></i> Ödeme Performansı: Toplam faturaların <strong>%${json.payment_ratio.toFixed(1)}</strong> kadarı düzenli tahsil edildi/ödendi.`;
+                    
+                    if (json.delayed_count > 0) {
+                        document.getElementById('aiInsightDelay').innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger-color); margin-right: 8px;"></i> <strong>DİKKAT (FİNDEKS UYARISI):</strong> Vadesi geçmiş <strong>${json.delayed_count} fatura</strong> bulunmaktadır. Toplam gecikmiş bakiye: <strong>${formatCurrency(json.delayed_sum)}</strong>. Derece aşağı yönlü baskılanmıştır!`;
+                    } else {
+                        document.getElementById('aiInsightDelay').innerHTML = `<i class="fa-solid fa-circle-check" style="color: #10b981; margin-right: 8px;"></i> Cari hesaba ait vadesi geçmiş veya gecikmiş fatura bulunmamaktadır. Ödemeler düzenli.`;
+                    }
+                }
+            } catch (err) {
+                console.error("AI Kredibilite hesaplama hatası:", err);
+            }
+        }
+
+        async function askCariAi() {
+            const inputEl = document.getElementById('cariAiQuestionInput');
+            const soru = inputEl.value.trim();
+            if (!soru) return;
+            
+            const responseBox = document.getElementById('aiResponseBox');
+            const responseText = document.getElementById('aiResponseText');
+            
+            responseBox.style.display = 'block';
+            responseText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> BulutAI soruyu analiz ediyor...`;
+            
+            try {
+                const response = await fetch('/api/ai/cari-sor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cari_id: cariId, soru: soru })
+                });
+                if (!response.ok) throw new Error();
+                const json = await response.json();
+                if (json.success) {
+                    responseText.innerHTML = json.cevap;
+                } else {
+                    responseText.textContent = json.message || "Bir hata oluştu.";
+                }
+            } catch(e) {
+                responseText.textContent = "Bağlantı hatası: Soru iletilemedi.";
+            }
+        }
+
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
+        }
+    </script>
+</body>
+</html>
