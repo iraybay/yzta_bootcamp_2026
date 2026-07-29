@@ -1,11 +1,18 @@
 import sqlite3
 import os
+import sys
 import datetime
 
-DB_FILE = 'bulutis.db'
+if getattr(sys, 'frozen', False):
+    APP_DIR = os.path.dirname(sys.executable)
+else:
+    APP_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DB_FILE = os.path.join(APP_DIR, 'bulutis.db')
 
 def get_db_connection():
     conn = sqlite3.connect(DB_FILE)
+
     conn.row_factory = sqlite3.Row
     return conn
 
