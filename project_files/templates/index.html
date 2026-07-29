@@ -62,7 +62,7 @@
 
 
         <!-- Hızlı İşlem & Navigasyon Barı -->
-                        <section class="operations-bar-card" id="operationsBar">
+        <section class="operations-bar-card" id="operationsBar">
             <div class="operations-tabs">
                 <button class="op-tab-btn" onclick="toggleOperationsTab('cari')">
                     <i class="fa-solid fa-users icon-orange"></i> Cari İşlemleri <i class="fa-solid fa-chevron-down arrow"></i>
@@ -79,67 +79,59 @@
             </div>
             
             <div class="operations-bar-content" id="operationsContent">
+                <!-- Sub panels depending on active tab -->
                 <div class="op-sub-panel" id="opPanel-cari">
                     <ul class="op-vertical-menu">
                         <li onclick="window.location.href='/cari-listesi'">
                             <span class="menu-label"><i class="fa-solid fa-list-check icon-orange menu-item-icon"></i> Cari Listesini Aç</span>
-                            
                         </li>
                         <li onclick="executeSubAction('cari', 'add')">
                             <span class="menu-label"><i class="fa-solid fa-user-plus icon-orange menu-item-icon"></i> Yeni Cari Kartı Oluştur</span>
-                            
                         </li>
                         <li onclick="window.location.href='/cari-hareketler'">
                             <span class="menu-label"><i class="fa-solid fa-clock-rotate-left icon-orange menu-item-icon"></i> Son İşlemler & Özet</span>
-                            
                         </li>
                         <li onclick="window.location.href='/mutabakat-raporu'">
                             <span class="menu-label"><i class="fa-solid fa-file-invoice icon-orange menu-item-icon"></i> Mutabakat & Denge Raporu</span>
-                            
                         </li>
                     </ul>
                 </div>
+
                 <div class="op-sub-panel" id="opPanel-kasa">
                     <ul class="op-vertical-menu">
                         <li onclick="location.href='/kasa-listesi'">
                             <span class="menu-label"><i class="fa-solid fa-wallet icon-blue menu-item-icon"></i> Kasa Listesini Aç</span>
-                            
                         </li>
                         <li onclick="location.href='/banka-listesi'">
                             <span class="menu-label"><i class="fa-solid fa-building-columns icon-blue menu-item-icon"></i> Banka Listesini Aç</span>
-                            
                         </li>
                         <li onclick="location.href='/kasa-hareketler'">
                             <span class="menu-label"><i class="fa-solid fa-clock-rotate-left icon-blue menu-item-icon"></i> Son İşlemler & Özet</span>
-                            
                         </li>
                     </ul>
                 </div>
+
                 <div class="op-sub-panel" id="opPanel-stok">
                     <ul class="op-vertical-menu">
                         <li onclick="location.href='/stok-listesi'">
                             <span class="menu-label"><i class="fa-solid fa-boxes-stacked icon-green menu-item-icon"></i> Stok Listesi ve Depo Kartları</span>
-                            
                         </li>
                         <li onclick="location.href='/stok-listesi?action=new'">
                             <span class="menu-label"><i class="fa-solid fa-circle-plus icon-green menu-item-icon"></i> Yeni Stok Kartı Aç</span>
-                            
                         </li>
                         <li onclick="location.href='/stok-listesi?tab=hareketler'">
                             <span class="menu-label"><i class="fa-solid fa-truck-moving icon-green menu-item-icon"></i> Depo ve Stok Hareketleri</span>
-                            
                         </li>
                     </ul>
                 </div>
+
                 <div class="op-sub-panel" id="opPanel-fatura">
                     <ul class="op-vertical-menu">
                         <li onclick="location.href='/fatura-irsaliye'">
                             <span class="menu-label"><i class="fa-solid fa-file-invoice icon-purple menu-item-icon"></i> Fatura & İrsaliye Ekranı (Tüm Listeler)</span>
-                            
                         </li>
                         <li onclick="location.href='/fatura-irsaliye?type=irsaliye'">
                             <span class="menu-label"><i class="fa-solid fa-truck-ramp-box icon-purple menu-item-icon"></i> İrsaliye ve Sevkiyat Takibi</span>
-                            
                         </li>
                     </ul>
                 </div>
