@@ -1,47 +1,68 @@
-from db_manager import get_db_connection
+from repositories.db_core import get_db_connection
 
-class StokRepository:
+def get_stok_liste():
+    """Tüm stok kalemlerini listeler."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM stok ORDER BY ad ASC")
+    stoklar = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in stoklar]
 
-    @staticmethod
-    def tum_stoklari_getir():
-        """Tüm stok ve ürün kayıtlarını listeler."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM stok ORDER BY stok_adi ASC")
-        stoklar = cursor.fetchall()
-        conn.close()
-        return [dict(row) for row in stoklar]
+def get_stok_hareketler():
+    """Stok işlem hareketlerini getirir[cite: 8]."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT 
+            si.id,
+            COALESCE(si.tarih, '') as tarih,
+            COALESCE(si.fis_no, 'FIS-' || si.id) as fis_no,
+            COALESCE(s.ad, si.tanim, 'Ürün Belirtilmemiş') as urun,
+            COALESCE(si.tip, 'GIRIS') as tip,
+            COALESCE(si.miktar, 1) as miktar
+        FROM stok_islem si
+        LEFT JOIN stok s ON si.stok_id = s.id
+        ORDER BY si.tarih DESC, si.id DESC
+    """)
+    hareketler = cursor.fetchall()
+    conn.close()
+    
+    sonuc = []
+    for row in hareketler:
+        d = dict(row)
+        amt = d['miktar']
+        if d['tip'] in ('CIKIS', 'ALARM') and amt > 0:
+            amt = -amt
+        d['miktar'] = amt
+        sonuc.append(d)
+        
+    return sonuc
 
-    @staticmethod
-    def id_ile_stok_getir(stok_id: int):
-        """ID'ye göre tek bir stok kartı getirir."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM stok WHERE id = ?", (stok_id,))
-        stok = cursor.fetchone()
-        conn.close()
-        return dict(stok) if stok else None
+def add_stok(ad, kategori, adet=0):
+    """Yeni stok kalemi ekler[cite: 8]."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO stok (ad, kategori, adet)
+        VALUES (?, ?, ?)
+    """, (ad, kategori, adet))
+    conn.commit()
+    conn.close()
+    return True
 
-    @staticmethod
-    def stok_ekle(stok_kodu: str, stok_adi: str, birim: str = "Adet", miktar: float = 0.0, birim_fiyat: float = 0.0, kdv: float = 20.0):
-        """Yeni stok kartı oluşturur."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO stok (stok_kodu, stok_adi, birim, miktar, birim_fiyat, kdv)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (stok_kodu.strip(), stok_adi.strip(), birim.strip(), miktar, birim_fiyat, kdv))
-        conn.commit()
-        yeni_id = cursor.lastrowid
-        conn.close()
-        return yeni_id
+def add_stok_hareket(tanim, tip, tarih):
+    """Yeni stok hareketi ekler[cite: 8]."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO stok_islem (tanim, tip, tarih)
+        VALUES (?, ?, ?)
+    """, (tanim, tip, tarih))
+    conn.commit()
+    conn.close()
+    return True
 
-    @staticmethod
-    def stok_sil(stok_id: int):
-        """Stok kartını siler."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM stok WHERE id = ?", (stok_id,))
-        conn.commit()
-        conn.close()
-        return True
+def add_stok_item(ad, kategori, adet=0):
+    """add_stok ile aynı işlevi görür[cite: 8]."""
+    return add_stok(ad, kategori, adet)

@@ -1,72 +1,40 @@
-from db_manager import get_db_connection
+from repositories.db_core import get_db_connection
 
-class KasaRepository:
-
-    @staticmethod
-    def tum_kasalari_getir():
-        """Sistemdeki tüm kasaları getirir."""
+def get_banka_hesaplari(tur=None):
+    """Kasa veya banka hesaplarını türe göre güvenli bir şekilde getirir."""
+    try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM kasa ORDER BY kasa_adi ASC")
-        kasalar = cursor.fetchall()
+        
+        if tur:
+            cursor.execute("SELECT * FROM kasa_banka_hesap WHERE tur = ? ORDER BY ad ASC", (tur,))
+        else:
+            cursor.execute("SELECT * FROM kasa_banka_hesap ORDER BY ad ASC")
+            
+        hesaplar = cursor.fetchall()
         conn.close()
-        return [dict(row) for row in kasalar]
+        return [dict(row) for row in hesaplar]
+    except Exception as e:
+        print(f"KASA/BANKA REPO HATASI (get_banka_hesaplari): {e}")
+        return []
 
-    @staticmethod
-    def id_ile_kasa_getir(kasa_id: int):
-        """ID'ye göre tek bir kasa getirir."""
+def get_hesaplar(tur=None):
+    """get_banka_hesaplari ile eşdeğerdir."""
+    return get_banka_hesaplari(tur)
+
+def get_monthly_liquidity_data():
+    """Aylık likidite verilerini güvenli bir şekilde getirir."""
+    try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM kasa WHERE id = ?", (kasa_id,))
-        kasa = cursor.fetchone()
+        cursor.execute('''
+            SELECT strftime('%Y-%m', tarih) as ay, tip, SUM(tutar) as toplam 
+            FROM kasa_banka_islem 
+            GROUP BY ay, tip
+        ''')
+        rows = cursor.fetchall()
         conn.close()
-        return dict(kasa) if kasa else None
-
-    @staticmethod
-    def kasa_ekle(kasa_adi: str, aciklama: str = ""):
-        """Yeni bir kasa tanımı oluşturur."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO kasa (kasa_adi, bakiye, aciklama)
-            VALUES (?, 0.0, ?)
-        """, (kasa_adi.strip(), aciklama.strip()))
-        conn.commit()
-        yeni_id = cursor.lastrowid
-        conn.close()
-        return yeni_id
-
-    @staticmethod
-    def kasa_hareket_ekle(kasa_id: int, tarih: str, aciklama: str, tutar: float, islem_tipi: str):
-        """Kasaya para girişi ('GIRIS') veya para çıkışı ('CIKIS') kaydeder."""
-        if islem_tipi not in ('GIRIS', 'CIKIS'):
-            raise ValueError("İşlem tipi sadece 'GIRIS' veya 'CIKIS' olabilir.")
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            INSERT INTO kasa_hareketleri (kasa_id, tarih, aciklama, tutar, islem_tipi)
-            VALUES (?, ?, ?, ?, ?)
-        """, (kasa_id, tarih, aciklama.strip(), tutar, islem_tipi))
-
-        bakiye_degisim = tutar if islem_tipi == 'GIRIS' else -tutar
-        cursor.execute("UPDATE kasa SET bakiye = bakiye + ? WHERE id = ?", (bakiye_degisim, kasa_id))
-
-        conn.commit()
-        conn.close()
-        return True
-
-    @staticmethod
-    def kasa_hareketleri_getir(kasa_id: int):
-        """Belirtilen kasanın tüm işlem geçmişini getirir."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT * FROM kasa_hareketleri 
-            WHERE kasa_id = ? 
-            ORDER BY tarih DESC, id DESC
-        """, (kasa_id,))
-        hareketler = cursor.fetchall()
-        conn.close()
-        return [dict(row) for row in hareketler]
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"KASA/BANKA REPO HATASI (get_monthly_liquidity_data): {e}")
+        return []

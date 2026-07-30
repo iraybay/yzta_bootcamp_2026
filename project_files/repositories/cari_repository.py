@@ -1,93 +1,54 @@
-from db_manager import get_db_connection
+from repositories.db_core import get_db_connection
 
-class CariRepository:
+def get_all_cariler():
+    """Tüm cari kayıtlarını listeler."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM cari ORDER BY ad ASC")
+    cariler = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in cariler]
+
+def get_payment_plan():
+    """Ödeme planı listesini getirir."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM odeme_plani ORDER BY tarih ASC")
+    plan = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in plan]
+
+def get_cari_islem_history_range(start_date, end_date):
+    """Belirli tarih aralığındaki cari işlemleri getirir."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM cari_islem WHERE tarih BETWEEN ? AND ? ORDER BY tarih DESC", (start_date, end_date))
+    islemler = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in islemler]
+
+def get_cari_detail_and_history(cari_id):
+    """Tek bir carinin detaylarını ve işlem geçmişini getirir."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM cari WHERE id = ?", (cari_id,))
+    cari = cursor.fetchone()
     
-    @staticmethod
-    def tum_carileri_getir():
-        """Tüm cari kayıtlarını listeler."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM cari ORDER BY unvan ASC")
-        cariler = cursor.fetchall()
-        conn.close()
-        return [dict(row) for row in cariler]
+    cursor.execute("SELECT * FROM cari_islem WHERE cari_id = ? ORDER BY tarih DESC", (cari_id,))
+    islemler = cursor.fetchall()
+    conn.close()
+    
+    return dict(cari) if cari else None, [dict(row) for row in islemler]
 
-    @staticmethod
-    def id_ile_cari_getir(cari_id: int):
-        """ID'ye göre tek bir cari getirir."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM cari WHERE id = ?", (cari_id,))
-        cari = cursor.fetchone()
-        conn.close()
-        return dict(cari) if cari else None
-
-    @staticmethod
-    def cari_ekle(unvan: str, telefon: str = "", eposta: str = "", adres: str = ""):
-        """Yeni cari kaydı oluşturur."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO cari (unvan, telefon, eposta, adres, bakiye)
-            VALUES (?, ?, ?, ?, 0.0)
-        """, (unvan.strip(), telefon.strip(), eposta.strip(), adres.strip()))
-        conn.commit()
-        yeni_id = cursor.lastrowid
-        conn.close()
-        return yeni_id
-
-    @staticmethod
-    def cari_guncelle(cari_id: int, unvan: str, telefon: str, eposta: str, adres: str):
-        """Mevcut cari bilgilerini günceller."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE cari 
-            SET unvan = ?, telefon = ?, eposta = ?, adres = ?
-            WHERE id = ?
-        """, (unvan.strip(), telefon.strip(), eposta.strip(), adres.strip(), cari_id))
-        conn.commit()
-        conn.close()
-        return True
-
-    @staticmethod
-    def cari_sil(cari_id: int):
-        """Cari kaydını siler."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM cari WHERE id = ?", (cari_id,))
-        conn.commit()
-        conn.close()
-        return True
-
-    @staticmethod
-    def cari_hareket_ekle(cari_id: int, tarih: str, islem_tipi: str, aciklama: str, tutar: float):
-        """Cariye borç/alacak hareketi ekler ve bakiyesini günceller."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            INSERT INTO cari_hareketleri (cari_id, tarih, islem_tipi, aciklama, tutar)
-            VALUES (?, ?, ?, ?, ?)
-        """, (cari_id, tarih, islem_tipi, aciklama, tutar))
-
-        bakiye_degisim = tutar if islem_tipi == 'BORC' else -tutar
-        cursor.execute("UPDATE cari SET bakiye = bakiye + ? WHERE id = ?", (bakiye_degisim, cari_id))
-
-        conn.commit()
-        conn.close()
-        return True
-
-    @staticmethod
-    def cari_hareketleri_getir(cari_id: int):
-        """Bir carinin tüm hareket geçmişini getirir."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT * FROM cari_hareketleri 
-            WHERE cari_id = ? 
-            ORDER BY tarih DESC, id DESC
-        """, (cari_id,))
-        hareketler = cursor.fetchall()
-        conn.close()
-        return [dict(row) for row in hareketler]
+def add_cari_record(ad, tip="musteri", limit_val=0.0, vergi_no="Bilinmiyor", vergi_dairesi="", yetkili_kisi="Bilinmiyor", eposta="", telefon="", il="", ilce="", mahalle="", adres_detay="", cari_grubu="", kredibilite="A"):
+    """Veritabanına yeni cari (müşteri/tedarikçi) ekler."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO cari (ad, tip, limit_val, vergi_no, vergi_dairesi, yetkili_kisi, eposta, telefon, il, ilce, mahalle, adres_detay, cari_grubu, kredibilite)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (ad, tip, limit_val, vergi_no, vergi_dairesi, yetkili_kisi, eposta, telefon, il, ilce, mahalle, adres_detay, cari_grubu, kredibilite))
+    conn.commit()
+    yeni_id = cursor.lastrowid
+    conn.close()
+    return yeni_id
