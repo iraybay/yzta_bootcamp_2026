@@ -76,7 +76,7 @@ def analyze_kredibilite():
     # Calculate delayed payments
     delayed_count = 0
     delayed_sum = 0
-    today_limit = datetime.date(2026, 7, 18)
+    today_limit = datetime.date(2026, 7, 30)
     
     for t in transactions:
         t_val = t['tutar']
@@ -155,7 +155,7 @@ def ask_cari_question():
     delayed_count = 0
     delayed_sum = 0
     
-    today_limit = datetime.date(2026, 7, 18)
+    today_limit = datetime.date(2026, 7, 30)
     
     for t in transactions:
         t_val = t['tutar']

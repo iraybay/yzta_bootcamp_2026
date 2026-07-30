@@ -1,4 +1,9 @@
-with open('/Users/muhammedfurkankoruyan/Desktop/MyProject/KursBitirme/templates/mutabakat_raporu.html', 'r', encoding='utf-8') as f:
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+html_path = os.path.join(BASE_DIR, 'templates', 'mutabakat_raporu.html')
+
+with open(html_path, 'r', encoding='utf-8') as f:
     content = f.read()
 
 content = content.replace('"gelecek"', '"gelir"')
@@ -14,5 +19,5 @@ content = content.replace('toplam_gidecek', 'toplam_borç')
 content = content.replace('Gelecek Ödemeler', 'Gelir Ödemeleri')
 content = content.replace('Gidecek Ödemeler', 'Borç Ödemeleri')
 
-with open('/Users/muhammedfurkankoruyan/Desktop/MyProject/KursBitirme/templates/mutabakat_raporu.html', 'w', encoding='utf-8') as f:
+with open(html_path, 'w', encoding='utf-8') as f:
     f.write(content)

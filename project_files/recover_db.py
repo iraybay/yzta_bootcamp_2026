@@ -1,7 +1,11 @@
+import os
 import re
 import random
 
-with open('/Users/muhammedfurkankoruyan/Desktop/MyProject/KursBitirme/db_manager.py', 'r', encoding='utf-8') as f:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+db_manager_path = os.path.join(BASE_DIR, 'db_manager.py')
+
+with open(db_manager_path, 'r', encoding='utf-8') as f:
     lines = f.readlines()
 
 # Let's just recreate the odeme_listesi block
@@ -81,7 +85,7 @@ for i, line in enumerate(lines):
 
 if start_idx != -1 and end_idx != -1:
     new_lines = lines[:start_idx] + [replacement] + lines[end_idx:]
-    with open('/Users/muhammedfurkankoruyan/Desktop/MyProject/KursBitirme/db_manager.py', 'w', encoding='utf-8') as f:
+    with open(db_manager_path, 'w', encoding='utf-8') as f:
         f.writelines(new_lines)
     print("Recovered db_manager.py")
 else:

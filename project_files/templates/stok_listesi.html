@@ -129,39 +129,10 @@
             </div>
         </header>
 
-        <!-- Summary Metrics -->
-        <section class="summary-metrics-row">
-            <div class="metric-card">
-                <div class="metric-icon-box m-blue"><i class="fa-solid fa-box"></i></div>
-                <div class="metric-info">
-                    <span class="label">Kayıtlı Ürün Çeşidi</span>
-                    <span class="value" id="metricTotalProducts">0</span>
-                </div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-icon-box m-green"><i class="fa-solid fa-cubes"></i></div>
-                <div class="metric-info">
-                    <span class="label">Depodaki Toplam Adet</span>
-                    <span class="value" id="metricTotalQty">0</span>
-                </div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-icon-box m-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                <div class="metric-info">
-                    <span class="label">Kritik Stok Uyarıları (10 Altı)</span>
-                    <span class="value" id="metricCritical">0</span>
-                </div>
-            </div>
-        </section>
+
 
         <!-- Main Card Area -->
         <main class="main-card">
-            <!-- Tabs -->
-            <div class="fatura-tabs">
-                <button class="tab-btn active" id="tab-stoklar" onclick="switchTab('stoklar')"><i class="fa-solid fa-boxes-stacked"></i> Tüm Stok Kartları</button>
-                <button class="tab-btn" id="tab-kritik" onclick="switchTab('kritik')"><i class="fa-solid fa-triangle-exclamation"></i> Kritik Stoklar</button>
-                <button class="tab-btn" id="tab-hareketler" onclick="switchTab('hareketler')"><i class="fa-solid fa-truck-moving"></i> Depo Hareketleri</button>
-            </div>
 
             <!-- Actions Bar -->
             <div class="table-actions-bar">
@@ -171,8 +142,7 @@
                 </div>
                 
                 <div style="display: flex; gap: 8px;">
-                    <button id="btnSayimFisi" class="btn-secondary" onclick="showSayimFisiModal()"><i class="fa-solid fa-clipboard-check"></i> Sayım / Düzeltme Fişi</button>
-                    <button id="btnYeniStok" class="btn-primary" onclick="showAddStokModal()"><i class="fa-solid fa-plus"></i> Yeni Ürün Ekle</button>
+                    <button id="btnYeniStok" class="btn-primary" onclick="showAddStokModal()"><i class="fa-solid fa-plus"></i> Stok Girişi</button>
                 </div>
             </div>
 

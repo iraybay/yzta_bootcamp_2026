@@ -315,14 +315,14 @@
                 <div class="filter-box-wrapper" style="display: flex; align-items: center; gap: 8px;">
                     <label for="monthFilter" style="font-size: 12px; font-weight: 600; color: var(--text-secondary);"><i class="fa-solid fa-calendar-days"></i> Dönem Filtresi:</label>
                     <select id="monthFilter" onchange="filterByMonth()" style="background: var(--input-bg); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 50px; color: var(--text-primary); font-size: 12px; outline: none; cursor: pointer;">
-                        <option value="2026-07" selected>Temmuz 2026 (Bu Ay)</option>
+                        <option value="2026-07">Temmuz 2026 (Bu Ay)</option>
                         <option value="2026-06">Haziran 2026</option>
                         <option value="2026-05">Mayıs 2026</option>
                         <option value="2026-04">Nisan 2026</option>
                         <option value="2026-03">Mart 2026</option>
                         <option value="2026-02">Şubat 2026</option>
                         <option value="2026-01">Ocak 2026</option>
-                        <option value="all">Tüm Geçmiş</option>
+                        <option value="all" selected>Tüm Geçmiş</option>
                     </select>
                 </div>
             </div>
@@ -565,19 +565,26 @@
                 let vadeText = '-';
                 let isDelayed = false;
                 
-                const isInvoice = item.kaynak === 'fatura' && item.islem_tipi !== 'irsaliye';
+                const isInvoice = item.aciklama.toLowerCase().includes("faturası");
+                const isPaid = (item.odeme_tarihi !== null && item.odeme_tarihi !== 'null' && item.odeme_tarihi);
                 
-                let badgeClass = isBilgi ? 'badge-type' : (isAlacak ? 'badge-type bg-alacak' : 'badge-type bg-borc');
-                let badgeText = isBilgi ? 'Bilgi / İrsaliye' : (isAlacak ? (isMusteriGlobal ? 'Tahsilat (-)' : 'Fatura (+)') : (isMusteriGlobal ? 'Fatura (+)' : 'Ödeme (-)'));
-                
-                if (item.kaynak === 'fatura') badgeText = 'Fatura';
-                if (item.kaynak === 'odeme') badgeText = 'Ödeme / Tahsilat';
+                let badgeClass = '';
+                let badgeText = '';
+                if (isInvoice) {
+                    badgeText = 'Fatura';
+                    badgeClass = isMusteriGlobal ? 'badge-type bg-borc' : 'badge-type bg-alacak';
+                } else {
+                    badgeText = 'Ödeme / Tahsilat';
+                    badgeClass = isMusteriGlobal ? 'badge-type bg-alacak' : 'badge-type bg-borc';
+                }
                 
                 let actionBtn = '';
-                if (item.kaynak === 'fatura' && item.durum !== 'Ödendi') {
-                    actionBtn = `<button class="btn-pay" onclick="payInvoice(${item.belge_id}, '${item.belge_no}', ${item.tutar})" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--green-primary); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">Ödeme Yap</button>`;
-                } else if (item.kaynak === 'fatura' && item.durum === 'Ödendi') {
-                    actionBtn = `<span style="color: var(--green-primary); font-size: 12px; font-weight: 700;"><i class="fa-solid fa-check"></i> Ödendi</span>`;
+                if (isInvoice) {
+                    if (!isPaid) {
+                        actionBtn = `<button class="btn-pay" onclick="payInvoice(${item.belge_id}, '${item.belge_no}', ${item.tutar})" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--green-primary); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">Ödeme Yap</button>`;
+                    } else {
+                        actionBtn = `<span style="color: var(--green-primary); font-size: 12px; font-weight: 700;"><i class="fa-solid fa-check"></i> Ödendi</span>`;
+                    }
                 }
                 
                 if (isInvoice) {
@@ -590,7 +597,7 @@
                     const yyyy = dueDate.getFullYear();
                     vadeText = `${dd}.${mm}.${yyyy}`;
                     
-                    if (item.durum !== 'Ödendi' && new Date() > dueDate) {
+                    if (!isPaid && new Date('2026-07-30') > dueDate) {
                         isDelayed = true;
                     }
                 }
@@ -600,7 +607,7 @@
                 if (isDelayed) {
                     rowBg = "rgba(239, 68, 68, 0.06)";
                     rowColor = "var(--danger-color)";
-                } else if (item.kaynak === 'fatura' && item.durum === 'Ödendi') {
+                } else if (isInvoice && isPaid) {
                     rowBg = "rgba(16, 185, 129, 0.03)";
                 }
                 
@@ -621,7 +628,7 @@
                         ${isDelayed ? '<span style="color:var(--danger-color); font-size: 11px; margin-left:8px; border:1px solid var(--danger-color); padding: 2px 6px; border-radius: 10px;"><i class="fa-solid fa-triangle-exclamation"></i> Gecikmiş Vade</span>' : ''}
                     </td>
                     <td style="${colorClass}">${formatCurrency(item.tutar)}</td>
-                    <td>${item.kaynak === 'fatura' ? vadeText : '-'}</td>
+                    <td>${isInvoice ? vadeText : '-'}</td>
                     <td class="text-center">${actionBtn}</td>
                 `;
                 tbody.appendChild(tr);
@@ -629,38 +636,9 @@
         }
         
         function payInvoice(fatura_id, belge_no, tutar) {
-            Swal.fire({
-                title: 'Fatura Ödemesi / Tahsilatı',
-                text: \`\${belge_no} numaralı faturanın \${tutar} ₺ tutarındaki ödemesini gerçekleştirmek istiyor musunuz?\`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Evet, Ödemeyi İşle',
-                cancelButtonText: 'Vazgeç',
-                confirmButtonColor: '#10b981'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    // API Call to process payment
-                    try {
-                        const formData = new FormData();
-                        formData.append('cari_id', cariId);
-                        formData.append('fatura_id', fatura_id);
-                        formData.append('tutar', tutar);
-                        formData.append('tip', isMusteriGlobal ? 'gelir' : 'gider');
-                        formData.append('tanim', belge_no + ' Nolu Fatura Tahsilatı/Ödemesi');
-                        
-                        const res = await fetch('/api/fatura/ode', { method: 'POST', body: formData });
-                        const data = await res.json();
-                        
-                        if (data.success) {
-                            Swal.fire('Başarılı', 'Ödeme başarıyla kasaya aktarıldı ve fatura kapatıldı.', 'success');
-                            fetchCariDetail();
-                        } else {
-                            Swal.fire('Hata', 'İşlem sırasında bir hata oluştu.', 'error');
-                        }
-                    } catch (e) {
-                        Swal.fire('Hata', 'Sunucuya bağlanılamadı.', 'error');
-                    }
-                }
+            const payTip = isMusteriGlobal ? 'gelir' : 'gider';
+            showInvoicePaymentPopup(fatura_id, cariId, belge_no, tutar, payTip, () => {
+                fetchCariDetail();
             });
         }
 
@@ -743,6 +721,123 @@
 
         function formatCurrency(val) {
             return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
+        }
+
+        async function showInvoicePaymentPopup(faturaId, cariId, belgeNo, tutar, tip, onComplete) {
+            try {
+                const res = await fetch('/api/kasa-banka/hesaplar');
+                const json = await res.json();
+                if (!json.success) throw new Error("Hesaplar yüklenemedi.");
+                const accounts = json.data || [];
+                
+                if (accounts.length === 0) {
+                    Swal.fire('Hata', 'Ödeme alabilmek için öncelikle tanımlı bir kasa veya banka hesabı olmalıdır.', 'error');
+                    return;
+                }
+                
+                let optionsHtml = '';
+                accounts.forEach(acc => {
+                    const displayBal = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: acc.doviz_turu }).format(acc.bakiye || 0);
+                    optionsHtml += `<option value="${acc.id}">${acc.ad} (${acc.doviz_turu}) - Bakiye: ${displayBal}</option>`;
+                });
+                
+                const html = `
+                    <div style="text-align: left; font-family: 'Inter', sans-serif;">
+                        <div style="margin-bottom: 14px;">
+                            <label style="font-weight: 600; font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Tahsilat / Ödeme Yapılacak Hesap</label>
+                            <select id="payHesapId" class="swal2-input" style="width: 100%; margin: 0; padding: 0 10px; height: 40px; font-size: 13px; border-radius: 6px;">
+                                ${optionsHtml}
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div>
+                                <label style="font-weight: 600; font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Tutar (TRY)</label>
+                                <input type="number" id="payTutar" class="swal2-input" style="width: 100%; margin: 0; height: 40px; font-size: 13px; border-radius: 6px;" value="${tutar}" step="0.01" min="0.01">
+                            </div>
+                            <div>
+                                <label style="font-weight: 600; font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Ödeme Tarihi</label>
+                                <input type="date" id="payTarih" class="swal2-input" style="width: 100%; margin: 0; height: 40px; font-size: 13px; border-radius: 6px;" value="${new Date().toISOString().split('T')[0]}">
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-weight: 600; font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">İşlem Açıklaması</label>
+                            <input type="text" id="payTanim" class="swal2-input" style="width: 100%; margin: 0; height: 40px; font-size: 13px; border-radius: 6px;" value="${belgeNo} Nolu Fatura Tahsilatı/Ödemesi">
+                        </div>
+                    </div>
+                `;
+                
+                Swal.fire({
+                    title: 'Fatura Ödemesini İşle',
+                    html: html,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ödemeyi Onayla',
+                    cancelButtonText: 'Vazgeç',
+                    confirmButtonColor: '#10b981',
+                    preConfirm: () => {
+                        const hesapId = document.getElementById('payHesapId').value;
+                        const payTutar = document.getElementById('payTutar').value;
+                        const payTarih = document.getElementById('payTarih').value;
+                        const payTanim = document.getElementById('payTanim').value;
+                        
+                        if (!hesapId) {
+                            Swal.showValidationMessage('Lütfen bir kasa/banka hesabı seçin.');
+                            return false;
+                        }
+                        if (!payTutar || parseFloat(payTutar) <= 0) {
+                            Swal.showValidationMessage('Geçerli bir ödeme tutarı girin.');
+                            return false;
+                        }
+                        if (!payTarih) {
+                            Swal.showValidationMessage('Ödeme tarihi boş olamaz.');
+                            return false;
+                        }
+                        if (!payTanim.trim()) {
+                            Swal.showValidationMessage('Açıklama alanı boş olamaz.');
+                            return false;
+                        }
+                        
+                        return {
+                            hesap_id: parseInt(hesapId),
+                            tutar: parseFloat(payTutar),
+                            tarih: payTarih,
+                            tanim: payTanim
+                        };
+                    }
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        const data = result.value;
+                        try {
+                            const formData = new FormData();
+                            formData.append('cari_id', cariId);
+                            formData.append('fatura_id', faturaId);
+                            formData.append('hesap_id', data.hesap_id);
+                            formData.append('tutar', data.tutar);
+                            formData.append('tarih', data.tarih);
+                            formData.append('tanim', data.tanim);
+                            formData.append('tip', tip);
+                            
+                            const res = await fetch('/api/fatura/ode', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const resJson = await res.json();
+                            
+                            if (resJson.success) {
+                                Swal.fire('Başarılı', 'Ödeme işlemi başarıyla kaydedildi ve hesaplara yansıtıldı.', 'success');
+                                if (typeof onComplete === 'function') onComplete();
+                            } else {
+                                Swal.fire('Hata', resJson.message || 'Ödeme sırasında hata oluştu.', 'error');
+                            }
+                        } catch (e) {
+                            Swal.fire('Hata', 'İşlem sunucuya iletilemedi.', 'error');
+                        }
+                    }
+                });
+                
+            } catch (e) {
+                Swal.fire('Hata', 'Kasa/Banka hesapları yüklenemedi.', 'error');
+            }
         }
     </script>
 {% endblock %}

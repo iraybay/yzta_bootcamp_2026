@@ -1,7 +1,11 @@
+import os
 import re
 import random
 
-with open('/Users/muhammedfurkankoruyan/Desktop/MyProject/KursBitirme/db_manager.py', 'r', encoding='utf-8') as f:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+db_manager_path = os.path.join(BASE_DIR, 'db_manager.py')
+
+with open(db_manager_path, 'r', encoding='utf-8') as f:
     content = f.read()
 
 # Replace gelecek -> gelir and gidecek -> borç in odeme_plani tip field
@@ -42,7 +46,7 @@ pattern = re.compile(r'(\(\"[^\"]+\",\s*)([0-9\.]+)(,\s*\")([a-z]+)(\",\s*\"2026
 
 new_content = pattern.sub(replace_line, content)
 
-with open('/Users/muhammedfurkankoruyan/Desktop/MyProject/KursBitirme/db_manager.py', 'w', encoding='utf-8') as f:
+with open(db_manager_path, 'w', encoding='utf-8') as f:
     f.write(new_content)
     
 print("Modified db_manager.py")

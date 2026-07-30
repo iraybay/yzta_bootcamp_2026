@@ -1,5 +1,10 @@
+import os
 import re
-with open('/Users/muhammedfurkankoruyan/Desktop/MyProject/KursBitirme/templates/cari_detay.html', 'r') as f:
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+html_path = os.path.join(BASE_DIR, 'templates', 'cari_detay.html')
+
+with open(html_path, 'r') as f:
     content = f.read()
 
 # Find all document.getElementById('...')

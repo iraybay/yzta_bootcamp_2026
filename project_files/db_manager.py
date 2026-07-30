@@ -210,7 +210,9 @@ def init_db():
             miktar INTEGER DEFAULT 0,
             tarih TEXT NOT NULL,
             aciklama TEXT,
-            FOREIGN KEY (stok_id) REFERENCES stok(id)
+            irsaliye_id INTEGER,
+            FOREIGN KEY (stok_id) REFERENCES stok(id),
+            FOREIGN KEY (irsaliye_id) REFERENCES fatura_irsaliye(id) ON DELETE SET NULL
         )
     ''')
     
@@ -653,7 +655,12 @@ def get_dashboard_data():
         ratio = round((qty / total_stok_adet) * 100, 1) if total_stok_adet > 0 else 0
         kategoriler.append({"ad": cat_name, "oran": ratio, "adet": qty})
         
-    cursor.execute("SELECT id, tanim, tip, tarih FROM stok_islem ORDER BY id DESC LIMIT 5")
+    cursor.execute("""
+        SELECT h.id, s.ad || ' - ' || h.aciklama as tanim, h.tip, h.tarih 
+        FROM depo_hareket h
+        JOIN stok s ON h.stok_id = s.id
+        ORDER BY h.tarih DESC, h.id DESC LIMIT 5
+    """)
     stok_islemler = [dict(row) for row in cursor.fetchall()]
     
     # 4. Fatura ve Irsaliye calculations

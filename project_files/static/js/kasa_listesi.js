@@ -59,7 +59,7 @@ let allKasa = [];
             }
             
             tbody.innerHTML = '';
-            list.forEach(c => {
+            list.forEach((c, idx) => {
                 const tr = document.createElement('tr');
                 const isPositive = c.bakiye >= 0;
                 const balClass = isPositive ? 'bal-positive' : 'bal-negative';
@@ -78,7 +78,7 @@ let allKasa = [];
                 }
                 
                 tr.innerHTML = `
-                    <td><strong>#${c.id}</strong></td>
+                    <td><strong>#${idx + 1}</strong></td>
                     <td><strong class="link-hover">${c.ad}</strong></td>
                     <td><span class="badge-type bg-kasa">Kasa Tipi</span></td>
                     <td><strong>${c.doviz_turu || 'TRY'}</strong></td>

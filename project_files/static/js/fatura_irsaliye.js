@@ -34,8 +34,22 @@ let allFatura = [];
                 document.getElementById('tab-tumu').style.display = 'none';
                 document.getElementById('tab-satis').style.display = 'none';
                 document.getElementById('tab-alis').style.display = 'none';
-                // Switch to Irsaliye automatically
+                document.getElementById('tab-irsaliye').style.display = 'inline-flex';
+                
+                // Update title & icon indicator dynamically
+                const indicator = document.querySelector('.page-indicator');
+                if (indicator) {
+                    indicator.innerHTML = '<i class="fa-solid fa-truck-fast"></i> İrsaliye & Sevkiyat Takibi';
+                }
+                document.title = "İrsaliye & Sevkiyat Takibi - Bulutİş ERP";
+                
                 switchTab('irsaliye');
+            } else {
+                document.getElementById('tab-irsaliye').style.display = 'none';
+                document.getElementById('tab-tumu').style.display = 'inline-flex';
+                document.getElementById('tab-satis').style.display = 'inline-flex';
+                document.getElementById('tab-alis').style.display = 'inline-flex';
+                switchTab('tumu');
             }
             
             if (params.get('action') === 'new') {
@@ -131,17 +145,23 @@ let allFatura = [];
         function filterData() {
             const query = document.getElementById('searchFaturaInput').value.toLowerCase().trim();
             const durumVal = document.getElementById('durumFilter').value;
+            const params = new URLSearchParams(window.location.search);
+            const isIrsaliyeMode = params.get('type') === 'irsaliye';
             
             let filtered = allFatura.filter(item => {
                 const matchesQuery = item.tanim.toLowerCase().includes(query);
                 const matchesDurum = (durumVal === 'tumu') || (item.durum === durumVal);
                 
-                let matchesTab = true;
-                if (currentTab === 'satis') matchesTab = (item.belge_turu === 'satis');
-                else if (currentTab === 'alis') matchesTab = (item.belge_turu === 'alis');
-                else if (currentTab === 'irsaliye') matchesTab = (item.belge_turu === 'irsaliye' || item.belge_turu === 'irsaliyeli_fatura');
+                // Segregate Waybills (irsaliye) from Invoices (fatura) based on active view mode
+                const isWaybill = (item.belge_turu === 'irsaliye' || item.belge_turu === 'irsaliyeli_fatura');
+                const matchesMode = isIrsaliyeMode ? isWaybill : !isWaybill;
                 
-                return matchesQuery && matchesDurum && matchesTab;
+                let matchesTab = true;
+                if (currentTab === 'satis') matchesTab = (item.belge_turu === 'satis' || item.belge_turu === 'satis_faturasi');
+                else if (currentTab === 'alis') matchesTab = (item.belge_turu === 'alis' || item.belge_turu === 'alis_faturasi');
+                else if (currentTab === 'irsaliye') matchesTab = isWaybill;
+                
+                return matchesQuery && matchesDurum && matchesMode && matchesTab;
             });
             
             renderTable(filtered);
@@ -160,9 +180,9 @@ let allFatura = [];
                 
                 // Type Badge
                 let typeBadge = '';
-                if (item.belge_turu === 'satis') {
+                if (item.belge_turu === 'satis' || item.belge_turu === 'satis_faturasi') {
                     typeBadge = `<span class="badge-type bg-satis"><i class="fa-solid fa-file-arrow-up"></i> Satış Faturası</span>`;
-                } else if (item.belge_turu === 'alis') {
+                } else if (item.belge_turu === 'alis' || item.belge_turu === 'alis_faturasi') {
                     typeBadge = `<span class="badge-type bg-alis"><i class="fa-solid fa-file-arrow-down"></i> Alış Faturası</span>`;
                 } else if (item.belge_turu === 'irsaliye') {
                     typeBadge = `<span class="badge-type bg-irsaliye"><i class="fa-solid fa-truck-fast"></i> Sevk İrsaliyesi</span>`;
@@ -193,9 +213,17 @@ let allFatura = [];
                 let toggleActionText = item.durum === 'Ödendi' ? 'Ödenmedi İşaretle' : (item.belge_turu === 'irsaliye' ? 'Teslim Edildi Yap' : 'Ödendi İşaretle');
                 let nextStatus = item.durum === 'Ödendi' ? 'Ödenmedi' : (item.belge_turu === 'irsaliye' ? 'Teslim Edildi' : 'Ödendi');
 
-                let unvanDisplay = item.unvan || 'Genel Cari';
+                let unvanDisplay = item.cari_ad || 'Genel Cari';
                 if (item.cari_id) {
                     unvanDisplay = `<a href="/cari-detay/${item.cari_id}" style="color: var(--primary-color); text-decoration: none;" class="link-hover">${unvanDisplay}</a>`;
+                }
+
+                let actionBtnHtml = '';
+                if (item.durum === 'Ödenmedi' && item.belge_turu !== 'irsaliye') {
+                    const payTip = (item.belge_turu === 'satis' || item.belge_turu === 'satis_faturasi') ? 'gelir' : 'gider';
+                    actionBtnHtml = `<button class="action-btn-sm" onclick="showInvoicePaymentPopup(${item.id}, ${item.cari_id}, '${item.belge_no || 'FT-' + item.id}', ${item.tutar}, '${payTip}', () => { fetchFaturaList(); })">Ödeme Yap</button>`;
+                } else {
+                    actionBtnHtml = `<button class="action-btn-sm" onclick="changeStatus(${item.id}, '${nextStatus}')">${toggleActionText}</button>`;
                 }
 
                 tr.innerHTML = `
@@ -208,7 +236,7 @@ let allFatura = [];
                     <td>${stBadge}</td>
                     <td><strong>${tutarDisplay}</strong></td>
                     <td style="text-align: right; white-space: nowrap;">
-                        <button class="action-btn-sm" onclick="changeStatus(${item.id}, '${nextStatus}')">${toggleActionText}</button>
+                        ${actionBtnHtml}
                         <button class="action-btn-del" onclick="deleteRecord(${item.id})"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 `;
@@ -440,4 +468,121 @@ let allFatura = [];
 
         function formatCurrency(val) {
             return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
+        }
+
+        async function showInvoicePaymentPopup(faturaId, cariId, belgeNo, tutar, tip, onComplete) {
+            try {
+                const res = await fetch('/api/kasa-banka/hesaplar');
+                const json = await res.json();
+                if (!json.success) throw new Error("Hesaplar yüklenemedi.");
+                const accounts = json.data || [];
+                
+                if (accounts.length === 0) {
+                    Swal.fire('Hata', 'Ödeme alabilmek için öncelikle tanımlı bir kasa veya banka hesabı olmalıdır.', 'error');
+                    return;
+                }
+                
+                let optionsHtml = '';
+                accounts.forEach(acc => {
+                    const displayBal = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: acc.doviz_turu }).format(acc.bakiye || 0);
+                    optionsHtml += `<option value="${acc.id}">${acc.ad} (${acc.doviz_turu}) - Bakiye: ${displayBal}</option>`;
+                });
+                
+                const html = `
+                    <div style="text-align: left; font-family: 'Inter', sans-serif;">
+                        <div style="margin-bottom: 14px;">
+                            <label style="font-weight: 600; font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Tahsilat / Ödeme Yapılacak Hesap</label>
+                            <select id="payHesapId" class="swal2-input" style="width: 100%; margin: 0; padding: 0 10px; height: 40px; font-size: 13px; border-radius: 6px;">
+                                ${optionsHtml}
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div>
+                                <label style="font-weight: 600; font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Tutar (TRY)</label>
+                                <input type="number" id="payTutar" class="swal2-input" style="width: 100%; margin: 0; height: 40px; font-size: 13px; border-radius: 6px;" value="${tutar}" step="0.01" min="0.01">
+                            </div>
+                            <div>
+                                <label style="font-weight: 600; font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Ödeme Tarihi</label>
+                                <input type="date" id="payTarih" class="swal2-input" style="width: 100%; margin: 0; height: 40px; font-size: 13px; border-radius: 6px;" value="${new Date().toISOString().split('T')[0]}">
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-weight: 600; font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">İşlem Açıklaması</label>
+                            <input type="text" id="payTanim" class="swal2-input" style="width: 100%; margin: 0; height: 40px; font-size: 13px; border-radius: 6px;" value="${belgeNo} Nolu Fatura Tahsilatı/Ödemesi">
+                        </div>
+                    </div>
+                `;
+                
+                Swal.fire({
+                    title: 'Fatura Ödemesini İşle',
+                    html: html,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ödemeyi Onayla',
+                    cancelButtonText: 'Vazgeç',
+                    confirmButtonColor: '#10b981',
+                    preConfirm: () => {
+                        const hesapId = document.getElementById('payHesapId').value;
+                        const payTutar = document.getElementById('payTutar').value;
+                        const payTarih = document.getElementById('payTarih').value;
+                        const payTanim = document.getElementById('payTanim').value;
+                        
+                        if (!hesapId) {
+                            Swal.showValidationMessage('Lütfen bir kasa/banka hesabı seçin.');
+                            return false;
+                        }
+                        if (!payTutar || parseFloat(payTutar) <= 0) {
+                            Swal.showValidationMessage('Geçerli bir ödeme tutarı girin.');
+                            return false;
+                        }
+                        if (!payTarih) {
+                            Swal.showValidationMessage('Ödeme tarihi boş olamaz.');
+                            return false;
+                        }
+                        if (!payTanim.trim()) {
+                            Swal.showValidationMessage('Açıklama alanı boş olamaz.');
+                            return false;
+                        }
+                        
+                        return {
+                            hesap_id: parseInt(hesapId),
+                            tutar: parseFloat(payTutar),
+                            tarih: payTarih,
+                            tanim: payTanim
+                        };
+                    }
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        const data = result.value;
+                        try {
+                            const formData = new FormData();
+                            formData.append('cari_id', cariId);
+                            formData.append('fatura_id', faturaId);
+                            formData.append('hesap_id', data.hesap_id);
+                            formData.append('tutar', data.tutar);
+                            formData.append('tarih', data.tarih);
+                            formData.append('tanim', data.tanim);
+                            formData.append('tip', tip);
+                            
+                            const res = await fetch('/api/fatura/ode', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const resJson = await res.json();
+                            
+                            if (resJson.success) {
+                                Swal.fire('Başarılı', 'Ödeme işlemi başarıyla kaydedildi ve hesaplara yansıtıldı.', 'success');
+                                if (typeof onComplete === 'function') onComplete();
+                            } else {
+                                Swal.fire('Hata', resJson.message || 'Ödeme sırasında hata oluştu.', 'error');
+                            }
+                        } catch (e) {
+                            Swal.fire('Hata', 'İşlem sunucuya iletilemedi.', 'error');
+                        }
+                    }
+                });
+                
+            } catch (e) {
+                Swal.fire('Hata', 'Kasa/Banka hesapları yüklenemedi.', 'error');
+            }
         }

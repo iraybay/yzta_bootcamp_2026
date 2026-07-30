@@ -160,7 +160,8 @@ body {
     border-radius: var(--border-radius-md);
     box-shadow: var(--card-shadow);
     transition: var(--transition-smooth);
-    z-index: 10;
+    position: relative;
+    z-index: 1010;
 }
 
 .header-left {
@@ -350,11 +351,12 @@ body {
 .profile-name {
     font-weight: 600;
     font-size: 14px;
+    color: #ffffff !important;
 }
 
 .profile-role {
     font-size: 11px;
-    color: var(--text-secondary);
+    color: #ffffff !important;
 }
 
 /* ==========================================
@@ -1712,62 +1714,48 @@ body.dark-mode .app-header .btn-back:hover {
 }
 
 /* Filter headers dark styling with negative margins to span full width of parent cards with no spacing */
-.filters-bar,
-.table-actions-bar,
-.card-header-bar {
-    background: #111e38 !important;
-    margin: -16px -20px 24px -20px !important;
-    padding: 16px 20px !important;
-    border: none !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-top-left-radius: 15px !important;
-    border-top-right-radius: 15px !important;
-}
-
 .dark-mode .filters-bar,
 .dark-mode .table-actions-bar,
 .dark-mode .card-header-bar {
     background: #080f1d !important;
+    margin: -16px -20px 24px -20px !important;
+    padding: 16px 20px !important;
+    border: none !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-top-left-radius: 15px !important;
+    border-top-right-radius: 15px !important;
 }
 
 /* Label text colors inside dark filter bars */
-.filters-bar label,
-.table-actions-bar label,
-.card-header-bar label,
-.card-header-bar h3 {
+.dark-mode .filters-bar label,
+.dark-mode .table-actions-bar label,
+.dark-mode .card-header-bar label,
+.dark-mode .card-header-bar h3 {
     color: #f8fafc !important;
 }
 
 /* Make sure text colors inside input fields remain visible */
-.filters-bar input,
-.filters-bar select,
-.table-actions-bar input,
-.table-actions-bar select,
-.card-header-bar input,
-.card-header-bar select {
+.dark-mode .filters-bar input,
+.dark-mode .filters-bar select,
+.dark-mode .table-actions-bar input,
+.dark-mode .table-actions-bar select,
+.dark-mode .card-header-bar input,
+.dark-mode .card-header-bar select {
     background: rgba(255, 255, 255, 0.08) !important;
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
     color: #ffffff !important;
 }
 
-.filters-bar input:focus,
-.filters-bar select:focus,
-.table-actions-bar input:focus,
-.table-actions-bar select:focus,
-.card-header-bar input:focus,
-.card-header-bar select:focus {
+.dark-mode .filters-bar input:focus,
+.dark-mode .filters-bar select:focus,
+.dark-mode .table-actions-bar input:focus,
+.dark-mode .table-actions-bar select:focus,
+.dark-mode .card-header-bar input:focus,
+.dark-mode .card-header-bar select:focus {
     border-color: var(--primary-color) !important;
 }
 
 /* Make select options readable on dark background */
-.filters-bar select option,
-.table-actions-bar select option,
-.card-header-bar select option {
-    background: #111e38 !important;
-    color: #ffffff !important;
-}
-
 .dark-mode .filters-bar select option,
 .dark-mode .table-actions-bar select option,
 .dark-mode .card-header-bar select option {

@@ -29,8 +29,8 @@ let allTransactions = [];
             } else {
                 if (btn) btn.innerHTML = '<i class="fa-solid fa-moon"></i>';
             }
-            document.getElementById('startDate').value = '2026-05-15';
-            document.getElementById('endDate').value = '2026-07-18';
+            document.getElementById('startDate').value = '2026-01-01';
+            document.getElementById('endDate').value = '2026-07-30';
             fetchTransactions();
         });
 

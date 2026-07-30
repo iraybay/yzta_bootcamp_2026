@@ -50,9 +50,11 @@
 
                 const statusHtml = item.durum === 'Ödendi'
                     ? '<span class="badge-payment" style="background:rgba(16,185,129,0.12);color:var(--green-primary);"><i class="fa-solid fa-circle-check"></i> Ödendi</span>'
-                    : (item.durum === 'Kısmi Ödendi'
-                       ? '<span class="badge-payment" style="background:rgba(245,158,11,0.12);color:var(--orange-primary);"><i class="fa-solid fa-circle-half-stroke"></i> Kısmi Ödendi</span>'
-                       : '<span class="badge-payment" style="background:rgba(100,116,139,0.12);color:var(--text-secondary);"><i class="fa-regular fa-clock"></i> Bekliyor</span>');
+                    : (item.durum === 'Gecikti' || item.durum === 'Ödenmedi'
+                       ? '<span class="badge-payment" style="background:rgba(239,68,68,0.15);color:var(--danger-color);"><i class="fa-solid fa-circle-exclamation"></i> Gecikti</span>'
+                       : (item.durum === 'Kısmi Ödendi'
+                          ? '<span class="badge-payment" style="background:rgba(245,158,11,0.12);color:var(--orange-primary);"><i class="fa-solid fa-circle-half-stroke"></i> Kısmi Ödendi</span>'
+                          : '<span class="badge-payment" style="background:rgba(100,116,139,0.12);color:var(--text-secondary);"><i class="fa-regular fa-clock"></i> Bekliyor</span>'));
 
                 const dateParts = item.tarih.split('-');
                 const formattedDate = dateParts.length === 3 ? `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}` : item.tarih;

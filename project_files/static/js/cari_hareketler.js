@@ -17,8 +17,8 @@ if (localStorage.getItem('theme') !== 'light') {
 
         window.addEventListener('DOMContentLoaded', () => {
             // Set default date range to the beginning of this month to today
-            document.getElementById('startDateIslem').value = "2026-07-01";
-            document.getElementById('endDateIslem').value = "2026-07-18";
+            document.getElementById('startDateIslem').value = "2026-01-01";
+            document.getElementById('endDateIslem').value = "2026-07-30";
             fetchRecentTransactions();
         });
 
@@ -98,7 +98,7 @@ if (localStorage.getItem('theme') !== 'light') {
                 const formattedDate = dateParts.length === 3 ? `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}` : item.tarih;
                 
                 // Calculate Vade / Son Gün (e.g. 30 days term limit for invoices based on cari role)
-                const isInvoice = item.tanim.includes("Faturası");
+                const isInvoice = item.tanim.toLowerCase().includes("faturası");
                 let vadeText = '-';
                 let odemeText = '-';
                 let isDelayed = false;
@@ -129,7 +129,7 @@ if (localStorage.getItem('theme') !== 'light') {
                             odemeText = `<span style="background: rgba(16, 185, 129, 0.12); border: 1px solid var(--green-primary); color: var(--green-primary); padding: 4px 10px; border-radius: 4px; font-weight:800; font-size:11px;"><i class="fa-regular fa-calendar-check"></i> Ödendi: ${formattedPayDate}</span>`;
                         }
                     } else {
-                        const todayLimit = new Date('2026-07-18');
+                        const todayLimit = new Date('2026-07-30');
                         if (dueDate < todayLimit) {
                             odemeText = `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger-color); color: var(--danger-color); padding: 4px 10px; border-radius: 4px; font-weight:800; font-size:11px;"><i class="fa-solid fa-circle-exclamation"></i> Ödenmedi</span>`;
                             isDelayed = true;

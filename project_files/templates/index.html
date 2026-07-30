@@ -50,9 +50,9 @@
 
                 <!-- User Profile -->
                 <div class="user-profile">
-                    <div class="profile-avatar">MF</div>
+                    <div class="profile-avatar">T</div>
                     <div class="profile-info">
-                        <span class="profile-name">M. Furkan</span>
+                        <span class="profile-name">Tester</span>
                         <span class="profile-role">Yönetici</span>
                     </div>
                 </div>
@@ -116,11 +116,11 @@
                         <li onclick="location.href='/stok-listesi'">
                             <span class="menu-label"><i class="fa-solid fa-boxes-stacked icon-green menu-item-icon"></i> Stok Listesi ve Depo Kartları</span>
                         </li>
-                        <li onclick="location.href='/stok-listesi?action=new'">
-                            <span class="menu-label"><i class="fa-solid fa-circle-plus icon-green menu-item-icon"></i> Yeni Stok Kartı Aç</span>
+                        <li onclick="showAddStokModal()">
+                            <span class="menu-label"><i class="fa-solid fa-circle-plus icon-green menu-item-icon"></i> Yeni Stok Girişi</span>
                         </li>
                         <li onclick="location.href='/stok-listesi?tab=hareketler'">
-                            <span class="menu-label"><i class="fa-solid fa-truck-moving icon-green menu-item-icon"></i> Depo ve Stok Hareketleri</span>
+                            <span class="menu-label"><i class="fa-solid fa-truck-moving icon-green menu-item-icon"></i> Stok Hareketleri</span>
                         </li>
                     </ul>
                 </div>
@@ -418,7 +418,7 @@
                         <i class="fa-solid fa-vault icon-blue"></i>
                         <span>Kasa/Banka İşlemi</span>
                     </button>
-                    <button class="quick-action-card" onclick="triggerQuickAction('stok')">
+                    <button class="quick-action-card" onclick="showAddStokModal()">
                         <i class="fa-solid fa-box-open icon-green"></i>
                         <span>Yeni Ürün Girişi</span>
                     </button>
@@ -438,4 +438,51 @@
 
 {% block scripts %}
 <script src="/static/js/app.js"></script>
+<script>
+function showAddStokModal() {
+    Swal.fire({
+        title: 'Yeni Stok Kartı Ekle',
+        html: `
+            <div style="text-align: left; font-size: 13px;">
+                <label style="display: block; margin-bottom: 4px; font-weight:600;">Ürün Adı *</label>
+                <input id="swalUrunAd" class="swal2-input" style="width: 100%; box-sizing: border-box; margin: 0 0 12px 0; height: 40px;">
+                
+                <label style="display: block; margin-bottom: 4px; font-weight:600;">Kategori</label>
+                <input id="swalKategori" class="swal2-input" style="width: 100%; box-sizing: border-box; margin: 0 0 12px 0; height: 40px;" placeholder="Örn: Hırdavat, Gıda, Elektronik">
+                
+                <label style="display: block; margin-bottom: 4px; font-weight:600;">Açılış Stok Miktarı</label>
+                <input id="swalAdet" type="number" class="swal2-input" style="width: 100%; box-sizing: border-box; margin: 0 0 12px 0; height: 40px;" value="0">
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Kaydet',
+        cancelButtonText: 'İptal',
+        preConfirm: () => {
+            return {
+                ad: document.getElementById('swalUrunAd').value,
+                kategori: document.getElementById('swalKategori').value,
+                adet: document.getElementById('swalAdet').value
+            }
+        }
+    }).then(async (res) => {
+        if (res.isConfirmed && res.value.ad) {
+            try {
+                const response = await fetch('/api/stok/ekle', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(res.value)
+                });
+                const data = await response.json();
+                if (data.success) {
+                    Swal.fire('Başarılı!', 'Ürün eklendi', 'success');
+                } else {
+                    Swal.fire('Hata', data.message || 'Eklenemedi', 'error');
+                }
+            } catch(e) {
+                Swal.fire('Hata', 'Sunucu hatası', 'error');
+            }
+        }
+    });
+}
+</script>
 {% endblock %}

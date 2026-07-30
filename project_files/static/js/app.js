@@ -72,38 +72,68 @@ document.addEventListener('DOMContentLoaded', () => {
         { text: "Son İşlemler & Özet Ekranı", keywords: ["son işlemler", "cari hareketler", "özet", "hareketler"], action: () => { location.href = '/cari-hareketler'; }, icon: "fa-solid fa-clock-rotate-left" }
     ];
 
-    searchInput.addEventListener('input', (e) => {
+    searchInput.addEventListener('input', async (e) => {
         const query = e.target.value.toLowerCase().trim();
         filterCards(query);
         
         if (query.length > 1) {
-            const matches = commands.filter(cmd => 
+            const staticMatches = commands.filter(cmd => 
                 cmd.keywords.some(keyword => keyword.includes(query) || query.includes(keyword))
-            );
+            ).map(cmd => ({
+                text: cmd.text,
+                icon: cmd.icon,
+                action: cmd.action
+            }));
             
-            if (matches.length > 0) {
-                suggestionsBox.innerHTML = matches.map((cmd, idx) => `
-                    <div class="search-suggestion-item" data-idx="${idx}">
-                        <i class="${cmd.icon}"></i>
-                        <span>${cmd.text}</span>
-                    </div>
-                `).join('');
-                suggestionsBox.style.display = 'block';
+            try {
+                const response = await fetch(`/api/global-search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
                 
-                // Add click listener
-                suggestionsBox.querySelectorAll('.search-suggestion-item').forEach(item => {
-                    item.addEventListener('click', () => {
-                        const idx = item.getAttribute('data-idx');
-                        matches[idx].action();
+                if (data.success) {
+                    const dbMatches = data.results.map(item => ({
+                        text: item.text,
+                        icon: item.icon,
+                        action: () => { location.href = item.target; }
+                    }));
+                    
+                    const allMatches = [...staticMatches, ...dbMatches];
+                    
+                    if (allMatches.length > 0) {
+                        suggestionsBox.innerHTML = allMatches.map((cmd, idx) => `
+                            <div class="search-suggestion-item" data-idx="${idx}">
+                                <i class="${cmd.icon}"></i>
+                                <span>${cmd.text}</span>
+                            </div>
+                        `).join('');
+                        suggestionsBox.style.display = 'block';
+                        
+                        // Add click listener
+                        suggestionsBox.querySelectorAll('.search-suggestion-item').forEach(item => {
+                            item.addEventListener('click', () => {
+                                const idx = item.getAttribute('data-idx');
+                                allMatches[idx].action();
+                                suggestionsBox.style.display = 'none';
+                                searchInput.value = '';
+                            });
+                        });
+                    } else {
                         suggestionsBox.style.display = 'none';
-                        searchInput.value = '';
-                    });
-                });
-            } else {
-                suggestionsBox.style.display = 'none';
+                    }
+                }
+            } catch (err) {
+                console.error("Global search error:", err);
             }
         } else {
             suggestionsBox.style.display = 'none';
+        }
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const firstSuggestion = suggestionsBox.querySelector('.search-suggestion-item');
+            if (firstSuggestion) {
+                firstSuggestion.click();
+            }
         }
     });
 
@@ -525,15 +555,40 @@ function renderModalData() {
         
         dashboardData.stok.son_islemler.forEach(item => {
             const tr = document.createElement('tr');
-            let tagClass = 'tag-green';
-            if (item.tip === 'alarm') tagClass = 'tag-orange';
-            else if (item.tip === 'cikis') tagClass = 'tag-blue';
+            let typeText = '';
+            let tagClass = '';
+            
+            if (item.tip === 'giris') {
+                typeText = 'Giriş';
+                tagClass = 'tag-green';
+            } else if (item.tip === 'cikis') {
+                typeText = 'Çıkış';
+                tagClass = 'tag-orange';
+            } else if (item.tip === 'sayim_fazlasi') {
+                typeText = 'Sayım fazlası';
+                tagClass = 'tag-purple';
+            } else if (item.tip === 'fire') {
+                typeText = 'Fire';
+                tagClass = 'tag-blue';
+            } else {
+                typeText = item.tip;
+                tagClass = 'tag-gray';
+            }
+            
+            // Format date as DD.MM.YYYY
+            let formattedDate = item.tarih;
+            if (item.tarih) {
+                const parts = item.tarih.split('-');
+                if (parts.length === 3) {
+                    formattedDate = `${parts[2]}.${parts[1]}.${parts[0]}`;
+                }
+            }
             
             tr.innerHTML = `
-                <td>${item.tarih}</td>
+                <td>${formattedDate}</td>
                 <td>${item.tanim}</td>
                 <td>-</td>
-                <td><span class="tile-tag ${tagClass}">${item.tip.toUpperCase()}</span></td>
+                <td><span class="tile-tag ${tagClass}" style="text-transform: none;">${typeText}</span></td>
             `;
             tableBody.appendChild(tr);
         });
@@ -726,22 +781,41 @@ function generateFormFields() {
     } else if (currentSection === 'stok') {
         fieldsContainer.innerHTML = `
             <div class="form-group">
-                <label for="stokAd">Ürün Adı</label>
-                <input type="text" id="stokAd" class="form-control" placeholder="Örn: Logi Tech Klavye MK220" required>
-            </div>
-            <div class="form-group">
-                <label for="stokKategori">Kategori</label>
-                <select id="stokKategori" class="form-control">
-                    <option value="Elektronik">Elektronik</option>
-                    <option value="Ofis Malzemeleri">Ofis Malzemeleri</option>
-                    <option value="Aksesuar & Sarf">Aksesuar & Sarf</option>
+                <label for="stokId">Ürün Seçin *</label>
+                <select id="stokId" class="form-control" required>
+                    <option value="">Yükleniyor...</option>
                 </select>
             </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="stokTip">İşlem Tipi *</label>
+                    <select id="stokTip" class="form-control">
+                        <option value="giris">Stok girişi</option>
+                        <option value="cikis">Stok çıkışı</option>
+                        <option value="sayim_fazlasi">Sayım fazlası</option>
+                        <option value="fire">Fire / zayiat</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="stokMiktar">Miktar *</label>
+                    <input type="number" id="stokMiktar" class="form-control" min="1" value="1" required>
+                </div>
+            </div>
             <div class="form-group">
-                <label for="stokAdet">Adet</label>
-                <input type="number" id="stokAdet" class="form-control" min="1" placeholder="10" required>
+                <label for="stokAciklama">Açıklama</label>
+                <input type="text" id="stokAciklama" class="form-control" placeholder="Örn: Malzeme alımı, Satış çıkışı, Hasar fire vb.">
             </div>
         `;
+        fetch('/api/stok/liste')
+            .then(res => res.json())
+            .then(json => {
+                const list = json.data || [];
+                const selectEl = document.getElementById('stokId');
+                if (selectEl) {
+                    selectEl.innerHTML = list.map(s => `<option value="${s.id}">${s.ad} (Mevcut: ${s.adet})</option>`).join('');
+                }
+            })
+            .catch(err => console.error("Stok listesi yuklenemedi", err));
     } else if (currentSection === 'fatura') {
         let cariOptionsHtml = (dashboardData.cari && dashboardData.cari.tum_liste ? dashboardData.cari.tum_liste : []).map(c => `<option value="${c.ad}">${c.ad}</option>`).join('');
 
@@ -893,11 +967,12 @@ async function handleFormSubmit(event) {
             tutar: document.getElementById('kasaTutar').value
         };
     } else if (currentSection === 'stok') {
-        url = '/api/stok/ekle';
+        url = '/api/stok/hareket-ekle';
         payload = {
-            ad: document.getElementById('stokAd').value,
-            kategori: document.getElementById('stokKategori').value,
-            adet: document.getElementById('stokAdet').value
+            stok_id: document.getElementById('stokId').value,
+            tip: document.getElementById('stokTip').value,
+            miktar: document.getElementById('stokMiktar').value,
+            aciklama: document.getElementById('stokAciklama').value || ''
         };
     } else if (currentSection === 'fatura') {
         url = '/api/fatura/ekle';
@@ -922,9 +997,9 @@ async function handleFormSubmit(event) {
             body: JSON.stringify(payload)
         });
 
-        if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.message || 'Kayıt işlemi başarısız.');
+        const resData = await response.json();
+        if (!response.ok || (resData && resData.success === false)) {
+            throw new Error(resData.message || 'Kayıt işlemi başarısız.');
         }
 
         // Successfully updated DB
@@ -1236,4 +1311,122 @@ function updateCariIlceOptions() {
     const selectedIl = ilSelect.value;
     const ilçeler = ilceData[selectedIl] || [];
     ilceSelect.innerHTML = ilçeler.map(ilce => `<option value="${ilce}">${ilce}</option>`).join('');
+}
+
+// Reusable SweetAlert2 modal for invoice payments/collections
+async function showInvoicePaymentPopup(faturaId, cariId, belgeNo, tutar, tip, onComplete) {
+    try {
+        const res = await fetch('/api/kasa-banka/hesaplar');
+        const json = await res.json();
+        if (!json.success) throw new Error("Hesaplar yüklenemedi.");
+        const accounts = json.data || [];
+        
+        if (accounts.length === 0) {
+            Swal.fire('Hata', 'Ödeme alabilmek için öncelikle tanımlı bir kasa veya banka hesabı olmalıdır.', 'error');
+            return;
+        }
+        
+        let optionsHtml = '';
+        accounts.forEach(acc => {
+            const displayBal = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: acc.doviz_turu }).format(acc.bakiye || 0);
+            optionsHtml += `<option value="${acc.id}">${acc.ad} (${acc.doviz_turu}) - Bakiye: ${displayBal}</option>`;
+        });
+        
+        const html = `
+            <div style="text-align: left; font-family: 'Inter', sans-serif;">
+                <div style="margin-bottom: 14px;">
+                    <label style="font-weight: 600; font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Tahsilat / Ödeme Yapılacak Hesap</label>
+                    <select id="payHesapId" class="swal2-input" style="width: 100%; margin: 0; padding: 0 10px; height: 40px; font-size: 13px; border-radius: 6px;">
+                        ${optionsHtml}
+                    </select>
+                </div>
+                <div style="margin-bottom: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="font-weight: 600; font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Tutar (TRY)</label>
+                        <input type="number" id="payTutar" class="swal2-input" style="width: 100%; margin: 0; height: 40px; font-size: 13px; border-radius: 6px;" value="${tutar}" step="0.01" min="0.01">
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Ödeme Tarihi</label>
+                        <input type="date" id="payTarih" class="swal2-input" style="width: 100%; margin: 0; height: 40px; font-size: 13px; border-radius: 6px;" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                </div>
+                <div>
+                    <label style="font-weight: 600; font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">İşlem Açıklaması</label>
+                    <input type="text" id="payTanim" class="swal2-input" style="width: 100%; margin: 0; height: 40px; font-size: 13px; border-radius: 6px;" value="${belgeNo} Nolu Fatura Tahsilatı/Ödemesi">
+                </div>
+            </div>
+        `;
+        
+        Swal.fire({
+            title: 'Fatura Ödemesini İşle',
+            html: html,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Ödemeyi Onayla',
+            cancelButtonText: 'Vazgeç',
+            confirmButtonColor: '#10b981',
+            preConfirm: () => {
+                const hesapId = document.getElementById('payHesapId').value;
+                const payTutar = document.getElementById('payTutar').value;
+                const payTarih = document.getElementById('payTarih').value;
+                const payTanim = document.getElementById('payTanim').value;
+                
+                if (!hesapId) {
+                    Swal.showValidationMessage('Lütfen bir kasa/banka hesabı seçin.');
+                    return false;
+                }
+                if (!payTutar || parseFloat(payTutar) <= 0) {
+                    Swal.showValidationMessage('Geçerli bir ödeme tutarı girin.');
+                    return false;
+                }
+                if (!payTarih) {
+                    Swal.showValidationMessage('Ödeme tarihi boş olamaz.');
+                    return false;
+                }
+                if (!payTanim.trim()) {
+                    Swal.showValidationMessage('Açıklama alanı boş olamaz.');
+                    return false;
+                }
+                
+                return {
+                    hesap_id: parseInt(hesapId),
+                    tutar: parseFloat(payTutar),
+                    tarih: payTarih,
+                    tanim: payTanim
+                };
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                const data = result.value;
+                try {
+                    const formData = new FormData();
+                    formData.append('cari_id', cariId);
+                    formData.append('fatura_id', faturaId);
+                    formData.append('hesap_id', data.hesap_id);
+                    formData.append('tutar', data.tutar);
+                    formData.append('tarih', data.tarih);
+                    formData.append('tanim', data.tanim);
+                    formData.append('tip', tip);
+                    
+                    const res = await fetch('/api/fatura/ode', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const resJson = await res.json();
+                    
+                    if (resJson.success) {
+                        Swal.fire('Başarılı', 'Ödeme işlemi başarıyla kaydedildi ve hesaplara yansıtıldı.', 'success');
+                        if (typeof onComplete === 'function') onComplete();
+                    } else {
+                        Swal.fire('Hata', resJson.message || 'Ödeme sırasında hata oluştu.', 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('Hata', 'İşlem sunucuya iletilemedi.', 'error');
+                }
+            }
+        });
+        
+    } catch (e) {
+        Swal.fire('Hata', 'Kasa/Banka hesapları yüklenemedi.', 'error');
+    }
 }
