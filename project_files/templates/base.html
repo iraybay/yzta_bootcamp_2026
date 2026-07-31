@@ -28,6 +28,16 @@
                 document.body.classList.add('light-mode');
             }
         })();
+        
+        // Add global click handler to app logo for navigation to home
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.app-logo').forEach(function(el) {
+                el.style.cursor = 'pointer';
+                el.addEventListener('click', function() {
+                    window.location.href = '/';
+                });
+            });
+        });
     </script>
     
     <div class="bg-orb orb-1"></div>

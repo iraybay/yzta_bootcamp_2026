@@ -33,3 +33,17 @@ todo.md
 # Logs and Caches
 *.log
 .pytest_cache/
+
+# Scratch and temporary scripts
+scratch/
+test_*.py
+fix_*.py
+check_*.py
+modify*.py
+extract_*.py
+restore_*.py
+rewrite_*.py
+refactor_*.py
+get_funcs.py
+migrate_db.py
+recover_db.py

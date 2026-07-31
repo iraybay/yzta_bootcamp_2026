@@ -12,6 +12,29 @@
             display: grid; grid-template-columns: repeat(3, 1fr);
             gap: 12px; margin-bottom: 14px;
         }
+        
+        /* History Table Styles */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+        .history-table th, .history-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .history-table th {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .history-table td {
+            color: var(--text-primary);
+        }
+        .history-table tr:hover {
+            background: rgba(255, 255, 255, 0.01);
+        }
         .metric-card {
             background: var(--card-bg); backdrop-filter: blur(16px);
             border: 1px solid var(--card-border); border-radius: var(--border-radius-md);
@@ -128,7 +151,43 @@
                 </span>
             </div>
         </header>
+        <!-- AI Chat Widget for Stok -->
+        <section class="ai-widget-card" id="aiWidget" style="margin: 0 20px 20px 20px;">
+            <div class="ai-card-header">
+                <div class="ai-title-wrapper">
+                    <i class="fa-solid fa-wand-magic-sparkles ai-sparkles"></i>
+                    <span class="ai-title" id="aiWidgetTitle">BulutAI Stok Kredibilite Asistanı ve Risk Raporu</span>
+                </div>
+                <div class="ai-badges">
+                    <span class="ai-badge-live"><i class="fa-solid fa-bolt"></i> CANLI ARAMA</span>
+                </div>
+            </div>
+            
+            <div class="ai-card-body">
+                <div class="ai-insights-list" id="aiInsightsList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; color: #f8fafc; font-size: 14.5px;">
+                    <!-- Placeholder insights that will be replaced or hidden -->
+                    <div class="insight-item" id="aiInsightRating" style="display: none;"><i class="fa-solid fa-circle-notch fa-spin"></i> Stok verileri analiz ediliyor...</div>
+                </div>
+                
+                <div class="insight-item" id="aiInsightReport" style="margin-bottom: 16px; padding: 18px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; font-size: 14.5px; line-height: 1.6; border-left: 4px solid #a78bfa; display: none;">
+                    <div style="width: 100%;">
+                        <strong style="color: #ffffff; font-size: 15.5px; display: block; margin-bottom: 8px;"><i class="fa-solid fa-shield-halved" style="color: #a78bfa; margin-right: 6px;"></i> BulutAI Yapay Zeka Stok Raporu:</strong>
+                        <div id="aiInsightReportContent" style="color: #f1f5f9 !important; text-align: justify;"></div>
+                    </div>
+                </div>
 
+                <!-- Chatbox to ask questions relating to the Stok -->
+                <div class="ai-ask-container">
+                    <div class="ai-chat-history" id="aiChatHistory" style="display: none;">
+                        <!-- Messages dynamically added here -->
+                    </div>
+                    <form class="ai-ask-form" onsubmit="event.preventDefault(); askStokAi();" style="display: flex; width: 100%; gap: 10px;">
+                        <input type="text" id="stokAiQuestionInput" placeholder="Kritik stokları göster, bitme sürelerini tahmin et veya web'de güncel fiyat araştır..." style="flex: 1; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 50px; padding: 10px 20px; color: white; font-size: 14px; outline: none;">
+                        <button type="submit" class="ai-send-btn" style="background: white; color: #8b5cf6; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-paper-plane"></i></button>
+                    </form>
+                </div>
+            </div>
+        </section>
 
 
         <!-- Main Card Area -->
@@ -136,12 +195,19 @@
 
             <!-- Actions Bar -->
             <div class="table-actions-bar">
-                <div class="search-box-wrapper">
+                <div class="search-box-wrapper" style="flex: 1; max-width: 300px;">
                     <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input type="text" id="searchInput" placeholder="Ürün adı, kategori veya kod ara..." onkeyup="filterData()">
+                    <input type="text" id="searchInput" placeholder="Ürün, kategori, fiş no ara..." onkeyup="filterData()">
                 </div>
                 
-                <div style="display: flex; gap: 8px;">
+                <div id="dateFilterWrapper" style="display: none; align-items: center; gap: 8px;">
+                    <input type="date" id="startDate" onchange="filterData()" style="background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--card-border); border-radius: 8px; padding: 6px 10px; font-size: 12px; outline: none; font-family: var(--font-body);">
+                    <span style="color: var(--text-secondary); font-size: 12px;">-</span>
+                    <input type="date" id="endDate" onchange="filterData()" style="background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--card-border); border-radius: 8px; padding: 6px 10px; font-size: 12px; outline: none; font-family: var(--font-body);">
+                </div>
+                
+                <div style="display: flex; gap: 8px; margin-left: auto;">
+                    <button id="btnSayimFisi" class="btn-secondary" onclick="showSayimFisiModal()" style="display: none;"><i class="fa-solid fa-clipboard-check"></i> Depo Fişi İşle</button>
                     <button id="btnYeniStok" class="btn-primary" onclick="showAddStokModal()"><i class="fa-solid fa-plus"></i> Stok Girişi</button>
                 </div>
             </div>

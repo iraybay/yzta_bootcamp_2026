@@ -134,3 +134,12 @@ def add_stok_hareket(stok_id, tip, miktar, aciklama, cari_id=None):
 def add_stok_item(ad, kategori, adet=0):
     """add_stok ile aynı işlevi görür."""
     return add_stok(ad, kategori, adet)
+
+def update_stok(stok_id, ad, kategori):
+    """Stok kalemi bilgilerini günceller."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE stok SET ad = ?, kategori = ? WHERE id = ?", (ad, kategori, stok_id))
+    conn.commit()
+    conn.close()
+    return True

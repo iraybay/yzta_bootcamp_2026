@@ -1,7 +1,7 @@
 from repositories.db_core import get_db_connection
 from repositories.cari_repository import get_all_cariler, get_payment_plan, get_cari_islem_history_range, get_cari_detail_and_history
 from repositories.dashboard_repository import get_dashboard_data
-from repositories.stok_repository import get_stok_liste, get_stok_hareketler, add_stok, add_stok_hareket
+from repositories.stok_repository import get_stok_liste, get_stok_hareketler, add_stok, add_stok_hareket, update_stok
 from flask import Blueprint, render_template, jsonify, request
 
 
@@ -152,6 +152,19 @@ def api_stok_ekle():
         
     add_stok(ad, kategori, adet)
     return jsonify({"success": True, "message": "Ürün başarıyla eklendi"})
+
+@main_bp.route('/api/stok/duzenle', methods=['POST'])
+def api_stok_duzenle():
+    req = request.get_json()
+    stok_id = req.get('id')
+    ad = req.get('ad')
+    kategori = req.get('kategori', '')
+    
+    if not stok_id or not ad:
+        return jsonify({"success": False, "message": "Geçersiz veriler"})
+        
+    update_stok(stok_id, ad, kategori)
+    return jsonify({"success": True, "message": "Ürün başarıyla güncellendi"})
 
 @main_bp.route('/api/stok/hareket-ekle', methods=['POST'])
 def api_stok_hareket_ekle():

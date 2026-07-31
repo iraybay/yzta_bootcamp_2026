@@ -2,8 +2,55 @@ import os
 import sys
 import webbrowser
 from flask import Flask
+from dotenv import load_dotenv
+load_dotenv(override=True)
 import db_manager
 import router
+
+def check_and_start_ollama():
+    """Ollama API sunucusunu kontrol eder ve çalışmıyorsa otomatik olarak başlatır."""
+    import subprocess
+    import platform
+    import time
+    import requests
+    
+    ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/chat")
+    # Base URL for health check
+    base_url = "/".join(ollama_url.split("/")[:3]) # e.g. http://localhost:11434
+    
+    try:
+        requests.get(base_url, timeout=2)
+        print("[*] Ollama arka planda aktif ve çalışıyor.")
+        return
+    except Exception:
+        pass
+        
+    print("[!] Ollama yanıt vermiyor, otomatik başlatılıyor...")
+    system_platform = platform.system()
+    if system_platform == "Darwin":  # macOS
+        try:
+            # open -a Ollama opens the application in the background
+            subprocess.Popen(["open", "-a", "Ollama"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print("[*] macOS Ollama uygulaması tetiklendi. Servis bekleniyor...")
+            for _ in range(8):
+                time.sleep(1)
+                try:
+                    requests.get(base_url, timeout=1)
+                    print("[*] Ollama servisi aktif hale geldi!")
+                    return
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"[!] Ollama başlatılamadı: {e}")
+    elif system_platform == "Windows":
+        try:
+            localappdata = os.environ.get("LOCALAPPDATA", "")
+            ollama_path = os.path.join(localappdata, "Programs", "Ollama", "ollama app.exe")
+            if os.path.exists(ollama_path):
+                subprocess.Popen([ollama_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                print("[*] Windows Ollama uygulaması tetiklendi.")
+        except Exception as e:
+            print(f"[!] Windows'ta Ollama başlatılamadı: {e}")
 
 if getattr(sys, 'frozen', False):
     base_dir = sys._MEIPASS
@@ -16,6 +63,9 @@ template_folder = os.path.join(base_dir, 'templates')
 app = Flask(__name__, 
             static_folder=static_folder,
             template_folder=template_folder)
+
+# Check and start Ollama service on initialization
+check_and_start_ollama()
 
 # Initialize SQLite database schema and mock records
 db_manager.init_db()

@@ -123,16 +123,25 @@ def get_cari_detail_and_history(cari_id):
     cursor.execute("""
         SELECT 
             'cari_islem' as kaynak,
-            id as belge_id,
-            'ISL-' || id as belge_no,
-            tarih,
-            tanim as aciklama,
-            tutar,
-            'Onaylandı' as durum,
-            tip as islem_tipi
-        FROM cari_islem
-        WHERE cari_id = ?
-        ORDER BY tarih DESC, id DESC
+            ci.id as belge_id,
+            fi.id as fatura_id,
+            COALESCE(fi.belge_no, 'MKZ-' || kbi.id, 'ISL-' || ci.id) as belge_no,
+            ci.tarih,
+            ci.tanim as aciklama,
+            ci.tutar,
+            COALESCE(fi.durum, 'Onaylandı') as durum,
+            ci.tip as islem_tipi
+        FROM cari_islem ci
+        LEFT JOIN fatura_irsaliye fi ON ci.cari_id = fi.cari_id 
+                                    AND ci.tarih = fi.tarih 
+                                    AND ABS(ci.tutar - fi.tutar) < 0.01
+                                    AND ci.tanim = fi.tanim
+        LEFT JOIN kasa_banka_islem kbi ON ci.cari_id = kbi.cari_id 
+                                      AND ci.tarih = kbi.tarih 
+                                      AND ABS(ci.tutar - kbi.tutar) < 0.01
+                                      AND ci.tanim = kbi.tanim
+        WHERE ci.cari_id = ?
+        ORDER BY ci.tarih DESC, ci.id DESC
     """, (cari_id,))
     
     transactions = [dict(r) for r in cursor.fetchall()]

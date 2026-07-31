@@ -197,19 +197,26 @@
             </div>
             
             <div class="ai-card-body">
-                <div class="ai-insights-list" id="aiInsightsList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; color: rgba(255, 255, 255, 0.95); font-size: 13px;">
+                <div class="ai-insights-list" id="aiInsightsList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; color: #f8fafc; font-size: 14.5px;">
                     <div class="insight-item" id="aiInsightRating"><i class="fa-solid fa-circle-notch fa-spin"></i> Kredibilite hesaplanıyor...</div>
                     <div class="insight-item" id="aiInsightPayments"><i class="fa-solid fa-circle-notch fa-spin"></i> Ödeme geçmişi taranıyor...</div>
                     <div class="insight-item" id="aiInsightDelay"><i class="fa-solid fa-circle-notch fa-spin"></i> Vade gecikmeleri kontrol ediliyor...</div>
                 </div>
+                
+                <div class="insight-item" id="aiInsightReport" style="margin-bottom: 16px; padding: 18px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; font-size: 14.5px; line-height: 1.6; border-left: 4px solid #a78bfa; display: none;">
+                    <div style="width: 100%;">
+                        <strong style="color: #ffffff; font-size: 15.5px; display: block; margin-bottom: 8px;"><i class="fa-solid fa-shield-halved" style="color: #a78bfa; margin-right: 6px;"></i> BulutAI Yapay Zeka Risk Raporu:</strong>
+                        <div id="aiInsightReportContent" style="color: #f1f5f9 !important; text-align: justify;"></div>
+                    </div>
+                </div>
 
                 <!-- Chatbox to ask questions relating to the current Cari -->
                 <div class="ai-ask-container">
-                    <div class="ai-response-box" id="aiResponseBox" style="display: none; background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
-                        <div class="ai-text" id="aiResponseText" style="color: var(--text-primary); font-size: 12px;"></div>
+                    <div class="ai-chat-history" id="aiChatHistory" style="display: none;">
+                        <!-- Messages dynamically added here -->
                     </div>
                     <form class="ai-ask-form" onsubmit="event.preventDefault(); askCariAi();" style="display: flex; width: 100%; gap: 10px;">
-                        <input type="text" id="cariAiQuestionInput" placeholder="Bu cari hesap ile ilgili merak ettiğiniz finansal soruyu sorun... (Örn: Gecikmiş ödemesi var mı?)" style="flex: 1; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 50px; padding: 10px 20px; color: white; font-size: 13px; outline: none;">
+                        <input type="text" id="cariAiQuestionInput" placeholder="Bu cari hesap ile ilgili merak ettiğiniz finansal soruyu sorun... (Örn: Gecikmiş ödemesi var mı?)" style="flex: 1; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 50px; padding: 10px 20px; color: white; font-size: 14px; outline: none;">
                         <button type="submit" class="ai-send-btn" style="background: white; color: #8b5cf6; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-paper-plane"></i></button>
                     </form>
                 </div>
@@ -338,23 +345,22 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>İşlem Tarihi</th>
-                            <th>İşlem / Açıklama</th>
+                            <th>Tarih</th>
+                            <th>Tür</th>
+                            <th>Belge & Açıklama</th>
                             <th>Vade Tarihi</th>
-                            <th>Ödeme Tarihi</th>
-                            <th>Tutar (TRY - B/G)</th>
+                            <th>Tutar (TRY)</th>
+                            <th class="text-center">İşlem / Durum</th>
                         </tr>
                     </thead>
                     <tbody id="historyTableBody">
                         <tr>
-                            <td colspan="6" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> İşlemler yükleniyor...</td>
+                            <td colspan="7" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> İşlemler yükleniyor...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </main>
-    </div>
-
     <!-- Client Script to load data -->
 {% endblock %}
 
@@ -547,7 +553,7 @@
             document.getElementById('historyCount').textContent = list.length;
             
             if (!list || list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Filtrelenen döneme ait herhangi bir işlem kaydı bulunamadı.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4">Filtrelenen döneme ait herhangi bir işlem kaydı bulunamadı.</td></tr>`;
                 return;
             }
             
@@ -581,7 +587,7 @@
                 let actionBtn = '';
                 if (isInvoice) {
                     if (!isPaid) {
-                        actionBtn = `<button class="btn-pay" onclick="payInvoice(${item.belge_id}, '${item.belge_no}', ${item.tutar})" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--green-primary); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">Ödeme Yap</button>`;
+                        actionBtn = `<button class="btn-pay" onclick="payInvoice(${item.fatura_id}, '${item.belge_no}', ${item.tutar})" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--green-primary); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">Ödeme Yap</button>`;
                     } else {
                         actionBtn = `<span style="color: var(--green-primary); font-size: 12px; font-weight: 700;"><i class="fa-solid fa-check"></i> Ödendi</span>`;
                     }
@@ -619,16 +625,19 @@
                 }
                 
                 let colorClass = isBilgi ? '' : (isAlacak ? 'color: var(--green-primary); font-weight: 700;' : 'color: var(--danger-color); font-weight: 700;');
+                const indicator = isBilgi ? '' : (isAlacak ? ' <span style="font-weight:800; color:var(--green-primary); font-size:11px; margin-left:4px;">G</span>' : ' <span style="font-weight:800; color:var(--danger-color); font-size:11px; margin-left:4px;">B</span>');
+                const amountText = `${formatCurrency(item.tutar)}${indicator}`;
                 
                 tr.innerHTML = `
+                    <td><strong>#${item.belge_id}</strong></td>
                     <td style="white-space: nowrap;"><i class="fa-regular fa-calendar" style="color: var(--text-secondary); margin-right: 6px;"></i> ${formattedDate}</td>
                     <td><span class="${badgeClass}">${badgeText}</span></td>
                     <td style="font-weight: 500;">
                         ${item.belge_no && item.belge_no !== 'null' ? '<strong>'+item.belge_no+'</strong> - ' : ''}${item.aciklama}
                         ${isDelayed ? '<span style="color:var(--danger-color); font-size: 11px; margin-left:8px; border:1px solid var(--danger-color); padding: 2px 6px; border-radius: 10px;"><i class="fa-solid fa-triangle-exclamation"></i> Gecikmiş Vade</span>' : ''}
                     </td>
-                    <td style="${colorClass}">${formatCurrency(item.tutar)}</td>
                     <td>${isInvoice ? vadeText : '-'}</td>
+                    <td style="${colorClass}">${amountText}</td>
                     <td class="text-center">${actionBtn}</td>
                 `;
                 tbody.appendChild(tr);
@@ -684,38 +693,86 @@
                     } else {
                         document.getElementById('aiInsightDelay').innerHTML = `<i class="fa-solid fa-circle-check" style="color: #10b981; margin-right: 8px;"></i> Cari hesaba ait vadesi geçmiş veya gecikmiş fatura bulunmamaktadır. Ödemeler düzenli.`;
                     }
+                    
+                    if (json.risk_raporu) {
+                        document.getElementById('aiInsightReport').style.display = 'block';
+                        document.getElementById('aiInsightReportContent').innerHTML = json.risk_raporu;
+                    } else {
+                        document.getElementById('aiInsightReport').style.display = 'none';
+                    }
                 }
             } catch (err) {
                 console.error("AI Kredibilite hesaplama hatası:", err);
             }
         }
 
+        let cariChatHistory = [];
+
         async function askCariAi() {
             const inputEl = document.getElementById('cariAiQuestionInput');
             const soru = inputEl.value.trim();
             if (!soru) return;
             
-            const responseBox = document.getElementById('aiResponseBox');
-            const responseText = document.getElementById('aiResponseText');
+            // Clear input immediately
+            inputEl.value = '';
             
-            responseBox.style.display = 'block';
-            responseText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> BulutAI soruyu analiz ediyor...`;
+            // Add user message to history
+            cariChatHistory.push({ role: 'user', content: soru });
+            
+            const chatHistory = document.getElementById('aiChatHistory');
+            
+            // Show history container
+            chatHistory.style.display = 'flex';
+            
+            // Append User Bubble
+            const userBubble = document.createElement('div');
+            userBubble.className = 'chat-bubble user';
+            userBubble.textContent = soru;
+            chatHistory.appendChild(userBubble);
+            
+            // Append AI Bubble (loading state)
+            const aiBubble = document.createElement('div');
+            aiBubble.className = 'chat-bubble ai';
+            aiBubble.innerHTML = `<span class="ai-text"><i class="fa-solid fa-circle-notch fa-spin"></i> BulutAI inceliyor...</span>`;
+            chatHistory.appendChild(aiBubble);
+            
+            // Scroll to bottom
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            
+            // Disable input
+            inputEl.disabled = true;
             
             try {
                 const response = await fetch('/api/ai/cari-sor', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ cari_id: cariId, soru: soru })
+                    body: JSON.stringify({ cari_id: cariId, soru: soru, history: cariChatHistory })
                 });
-                if (!response.ok) throw new Error();
-                const json = await response.json();
-                if (json.success) {
-                    responseText.innerHTML = json.cevap;
+                
+                let textResult = '';
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    textResult = errData.message || "Yapay zeka yanıt veremedi.";
                 } else {
-                    responseText.textContent = json.message || "Bir hata oluştu.";
+                    const json = await response.json();
+                    textResult = json.cevap;
                 }
+                
+                // Add assistant response to history
+                cariChatHistory.push({ role: 'assistant', content: textResult });
+                
+                // Simulated generation delay for smoothness
+                setTimeout(() => {
+                    aiBubble.innerHTML = `<span class="ai-text">${textResult}</span>`;
+                    inputEl.disabled = false;
+                    inputEl.focus();
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                }, 400);
+                
             } catch(e) {
-                responseText.textContent = "Bağlantı hatası: Soru iletilemedi.";
+                aiBubble.innerHTML = `<span class="ai-text" style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Bağlantı hatası: Yanıt alınamadı.</span>`;
+                inputEl.disabled = false;
+                chatHistory.scrollTop = chatHistory.scrollHeight;
             }
         }
 

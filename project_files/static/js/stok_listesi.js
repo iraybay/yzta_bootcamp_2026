@@ -57,6 +57,15 @@ let allStok = [];
                     showAddStokModal();
                 }
             }
+            
+            // Otomatik günlük stok raporu tetikleyici
+            setTimeout(() => {
+                const inputEl = document.getElementById('stokAiQuestionInput');
+                if(inputEl) {
+                    inputEl.value = "Sistemdeki kritik stokları listele ve bana günlük rapor olarak sun.";
+                    askStokAi(true);
+                }
+            }, 800);
         }
 
         async function fetchStokList() {
@@ -101,16 +110,24 @@ let allStok = [];
 
         function switchTab(tab) {
             currentTab = tab;
+            
+            // Update tabs UI
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             const elTab = document.getElementById(`tab-${tab}`);
             if (elTab) elTab.classList.add('active');
             
             const btnYeni = document.getElementById('btnYeniStok');
             const btnSayim = document.getElementById('btnSayimFisi');
+            const dateWrapper = document.getElementById('dateFilterWrapper');
             
             if (tab === 'hareketler') {
                 if (btnYeni) btnYeni.style.display = 'none';
                 if (btnSayim) btnSayim.style.display = 'inline-flex';
+                if (dateWrapper) dateWrapper.style.display = 'flex';
+                
+                const dataTable = document.getElementById('dataTable');
+                if (dataTable) dataTable.className = 'history-table';
+                
                 const elHeader = document.getElementById('tableHeader');
                 if (elHeader) {
                     elHeader.innerHTML = `
@@ -119,7 +136,7 @@ let allStok = [];
                         <th>Ürün</th>
                         <th>İşlem Tipi</th>
                         <th>Miktar</th>
-                        <th>İlişkili İrsaliye</th>
+                        <th>İrsaliye</th>
                         <th>Açıklama</th>
                     `;
                 }
@@ -127,6 +144,11 @@ let allStok = [];
             } else {
                 if (btnYeni) btnYeni.style.display = 'inline-flex';
                 if (btnSayim) btnSayim.style.display = 'none';
+                if (dateWrapper) dateWrapper.style.display = 'none';
+                
+                const dataTable = document.getElementById('dataTable');
+                if (dataTable) dataTable.className = 'data-table';
+                
                 const elHeader = document.getElementById('tableHeader');
                 if (elHeader) {
                     elHeader.innerHTML = `
@@ -142,9 +164,35 @@ let allStok = [];
         }
 
         function filterData() {
-            if (currentTab === 'hareketler') return; 
-            
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            if (currentTab === 'hareketler') {
+                const sDateVal = document.getElementById('startDate').value;
+                const eDateVal = document.getElementById('endDate').value;
+                const sDate = sDateVal ? new Date(sDateVal) : null;
+                const eDate = eDateVal ? new Date(eDateVal) : null;
+                
+                let filtered = allHareketler.filter(item => {
+                    // Text match
+                    const matchText = 
+                        (item.stok_ad && item.stok_ad.toLowerCase().includes(query)) ||
+                        (item.fis_no && item.fis_no.toLowerCase().includes(query)) ||
+                        (item.tip && item.tip.toLowerCase().includes(query)) ||
+                        (item.irsaliye_no && item.irsaliye_no.toLowerCase().includes(query));
+                        
+                    // Date match
+                    let matchDate = true;
+                    if (sDate || eDate) {
+                        const itemD = new Date(item.tarih);
+                        if (sDate && itemD < sDate) matchDate = false;
+                        if (eDate && itemD > eDate) matchDate = false;
+                    }
+                    
+                    return matchText && matchDate;
+                });
+                renderHareketler(filtered);
+                return;
+            }
             
             let filtered = allStok.filter(item => {
                 const matchesQuery = item.ad.toLowerCase().includes(query) || (item.kategori && item.kategori.toLowerCase().includes(query));
@@ -243,7 +291,7 @@ let allStok = [];
                 }
                 
                 tr.innerHTML = `
-                    <td>${formattedDate}</td>
+                    <td><strong>${formattedDate}</strong></td>
                     <td><span style="font-family: monospace; color: var(--primary-color); font-weight:700;">${item.fis_no}</span></td>
                     <td><strong>${item.stok_ad}</strong></td>
                     <td><span class="tile-tag ${typeClass}" style="text-transform: none;">${typeText}</span></td>
@@ -390,4 +438,142 @@ let allStok = [];
                     }
                 }
             });
+        }
+
+        function editStok(id) {
+            const stok = allStok.find(s => s.id === id);
+            if (!stok) return;
+            
+            Swal.fire({
+                title: 'Stok Kalemi Düzenle',
+                html: `
+                    <div style="text-align: left; font-size: 13px;">
+                        <label style="display: block; margin-bottom: 4px; font-weight:600;">Ürün Adı *</label>
+                        <input id="swalUrunAd" class="swal2-input" style="width: 100%; box-sizing: border-box; margin: 0 0 12px 0; height: 40px;" value="${stok.ad}">
+                        <label style="display: block; margin-bottom: 4px; font-weight:600;">Kategori</label>
+                        <input id="swalKategori" class="swal2-input" style="width: 100%; box-sizing: border-box; margin: 0 0 12px 0; height: 40px;" value="${stok.kategori}">
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Kaydet',
+                cancelButtonText: 'İptal',
+                preConfirm: () => {
+                    return {
+                        id: stok.id,
+                        ad: document.getElementById('swalUrunAd').value,
+                        kategori: document.getElementById('swalKategori').value
+                    }
+                }
+            }).then(async (res) => {
+                if (res.isConfirmed && res.value.ad) {
+                    try {
+                        const response = await fetch('/api/stok/duzenle', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(res.value)
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            Swal.fire('Başarılı!', 'Ürün güncellendi', 'success');
+                            fetchStokList();
+                        } else {
+                            Swal.fire('Hata', data.message || 'Güncellenemedi', 'error');
+                        }
+                    } catch(e) {
+                        Swal.fire('Hata', 'Sunucu hatası', 'error');
+                    }
+                }
+            });
+        }
+
+        let stokAiChatHistory = [];
+        
+        async function askStokAi(isInitialReport = false) {
+            const inputEl = document.getElementById('stokAiQuestionInput');
+            const question = inputEl.value.trim();
+            if (!question) return;
+            
+            inputEl.value = '';
+            
+            const historyContainer = document.getElementById('aiChatHistory');
+            const reportContainer = document.getElementById('aiInsightReport');
+            const reportContent = document.getElementById('aiInsightReportContent');
+            const ratingDiv = document.getElementById('aiInsightRating');
+            
+            if (!isInitialReport) {
+                historyContainer.style.display = 'block';
+                // Append user question
+                const userMsg = document.createElement('div');
+                userMsg.className = 'ai-chat-msg user';
+                userMsg.innerHTML = `<i class="fa-solid fa-user" style="opacity:0.7; font-size: 14px; margin-top:2px;"></i> <div style="flex:1;">${question}</div>`;
+                historyContainer.appendChild(userMsg);
+            } else {
+                if (ratingDiv) ratingDiv.style.display = 'block';
+            }
+            
+            // Append loading
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'ai-chat-msg ai loading';
+            loadingMsg.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles fa-bounce" style="color:var(--primary-color); font-size: 14px; margin-top:2px;"></i> <div style="flex:1;">Analiz ediliyor, lütfen bekleyin...</div>`;
+            
+            if (!isInitialReport) {
+                historyContainer.appendChild(loadingMsg);
+                historyContainer.scrollTop = historyContainer.scrollHeight;
+            }
+            
+            try {
+                const response = await fetch('/api/ai/stok-sor', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        soru: question,
+                        history: stokAiChatHistory
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!isInitialReport) {
+                    historyContainer.removeChild(loadingMsg);
+                } else {
+                    if (ratingDiv) ratingDiv.style.display = 'none';
+                    document.getElementById('aiInsightsList').style.display = 'none';
+                }
+                
+                if (data.success) {
+                    stokAiChatHistory.push({"role": "user", "content": question});
+                    stokAiChatHistory.push({"role": "model", "content": data.cevap});
+                    
+                    if (isInitialReport) {
+                        reportContent.innerHTML = data.cevap.replace(/\n/g, '<br>');
+                        reportContainer.style.display = 'block';
+                    } else {
+                        const aiMsg = document.createElement('div');
+                        aiMsg.className = 'ai-chat-msg ai';
+                        aiMsg.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary-color); font-size: 14px; margin-top:2px;"></i> <div style="flex:1; line-height:1.5;">${data.cevap.replace(/\n/g, '<br>')}</div>`;
+                        historyContainer.appendChild(aiMsg);
+                    }
+                } else {
+                    if (!isInitialReport) {
+                        const errMsg = document.createElement('div');
+                        errMsg.className = 'ai-chat-msg ai';
+                        errMsg.style.color = '#ef4444';
+                        errMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div>Hata: ${data.message}</div>`;
+                        historyContainer.appendChild(errMsg);
+                    }
+                }
+                
+                if (!isInitialReport) {
+                    historyContainer.scrollTop = historyContainer.scrollHeight;
+                }
+            } catch (error) {
+                if (historyContainer.contains(loadingMsg)) {
+                    historyContainer.removeChild(loadingMsg);
+                }
+                const errMsg = document.createElement('div');
+                errMsg.className = 'ai-chat-msg ai';
+                errMsg.style.color = '#ef4444';
+                errMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div>Bağlantı hatası oluştu. Lütfen tekrar deneyin.</div>`;
+                historyContainer.appendChild(errMsg);
+            }
         }

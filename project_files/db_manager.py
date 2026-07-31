@@ -219,128 +219,44 @@ def init_db():
     # Check if empty to seed initial demo data
     cursor.execute("SELECT COUNT(*) FROM cari")
     if cursor.fetchone()[0] == 0:
-        # Seed 22 Cari with limit values determined by credibility rating:
-        # A+ -> 150.000 TL, A -> 100.000 TL, B -> 50.000 TL, C -> 15.000 TL, D -> 5.000 TL
-        cariler = [
-            ("Ahmet Yılmaz", "musteri", 150000.0, "12345678901", "Kadıköy V.D.", "Ahmet Yılmaz", "ahmet@yilmazinsaat.com", "0532 111 22 33", "İstanbul", "Kadıköy", "Caferağa Mah.", "Moda Cad. No:12 D:4", "İnşaat", "A+"),
-            ("Ayşe Kaya", "musteri", 100000.0, "23456789012", "Beşiktaş V.D.", "Ayşe Kaya", "ayse@kayatasarim.com", "0533 222 33 44", "İstanbul", "Beşiktaş", "Sinanpaşa Mah.", "Ihlamurdere Cad. No:45", "Tasarım & Mimarlık", "A"),
-            ("TeknoMarket A.Ş.", "musteri", 50000.0, "9876543210", "Zincirlikuyu V.D.", "Mehmet Demir", "info@teknomarket.com", "0212 555 44 33", "İstanbul", "Şişli", "Esentepe Mah.", "Büyükdere Cad. No:199", "Teknoloji", "B"),
-            ("Vural İnşaat Ltd.", "musteri", 150000.0, "1122334455", "Ataşehir V.D.", "Caner Vural", "muhasebe@vuralinsaat.com", "0216 444 55 66", "İstanbul", "Ataşehir", "Barbaros Mah.", "Kardelen Sok. No:8/B", "İnşaat", "A+"),
-            ("Zeynep Şahin", "musteri", 15000.0, "34567890123", "Bakırköy V.D.", "Zeynep Şahin", "zeynep@sahindanismanlik.com", "0535 333 44 55", "İstanbul", "Bakırköy", "Kartaltepe Mah.", "İncirli Cad. No:12", "Danışmanlık", "C"),
-            ("Caner Demir", "musteri", 50000.0, "45678901234", "Kartal V.D.", "Caner Demir", "caner@demirmetal.com", "0536 444 55 66", "İstanbul", "Kartal", "Kordonboyu Mah.", "Ankara Cad. No:98", "Sanayi & Metal", "B"),
-            ("Öztürk Gıda", "musteri", 100000.0, "2233445566", "Mecidiyeköy V.D.", "Fatih Öztürk", "siparis@ozturkgida.com", "0212 666 77 88", "İstanbul", "Kağıthane", "Merkez Mah.", "Sadabad Cad. No:4", "Gıda Toptan", "A"),
-            ("Akdeniz Lojistik", "musteri", 150000.0, "3344556677", "Tuzla V.D.", "Selin Akdeniz", "operasyon@akdenizlojistik.com", "0216 777 88 99", "İstanbul", "Tuzla", "Aydınlı Mah.", "Liman Yolu No:89", "Lojistik & Nakliye", "A+"),
-            ("Elif Çelik", "musteri", 50000.0, "56789012345", "Beyoğlu V.D.", "Elif Çelik", "elif@celikreklam.com", "0537 555 66 77", "İstanbul", "Beyoğlu", "Cihangir Mah.", "Sıraselviler Cad. No:20", "Reklam & Medya", "B"),
-            ("Yıldız Mobilya", "musteri", 50000.0, "4455667788", "İkitelli V.D.", "Murat Yıldız", "destek@yildizmobilya.com", "0212 888 99 00", "İstanbul", "Başakşehir", "Ziya Gökalp Mah.", "İkitelli Org. San. No:5", "Mobilya Üretim", "B"),
-            ("Maslak Yazılım", "musteri", 100000.0, "5566778899", "Maslak V.D.", "Deniz Koç", "hakedis@maslakyazilim.com", "0212 999 00 11", "İstanbul", "Sarıyer", "Maslak Mah.", "Maslak Link Plaza No:4", "Teknoloji", "A"),
-            ("Beta Kimya", "musteri", 15000.0, "6677889900", "Gebze V.D.", "Kemal Sun", "kalite@betakimya.com", "0262 111 22 33", "Kocaeli", "Gebze", "Güzeller Mah.", "Gençlik Cad. No:14", "Kimya & Kozmetik", "C"),
-            ("Mavi Mimarlık", "musteri", 100000.0, "7788990011", "Üsküdar V.D.", "Merve Mavi", "proje@mavimimarlik.com", "0216 333 44 55", "İstanbul", "Üsküdar", "Mimar Sinan Mah.", "Bosna Bulvarı No:110", "Tasarım & Mimarlık", "A"),
-            ("Kaan Arslan", "musteri", 50000.0, "67890123456", "Pendik V.D.", "Kaan Arslan", "kaan@arslanmontaj.com", "0538 666 77 88", "İstanbul", "Pendik", "Batı Mah.", "Erol Kaya Cad. No:50", "Teknik Servis", "B"),
+        import random
+        from datetime import date, timedelta
+        
+        # Helper lists for random generation
+        ad_list = ["Ahmet", "Ayşe", "Mehmet", "Zeynep", "Caner", "Fatih", "Selin", "Elif", "Murat", "Deniz", "Kemal", "Merve", "Kaan", "Mustafa", "İbrahim", "Fatma", "Ömer", "Cemil", "Hasan", "Bülent"]
+        soyad_list = ["Yılmaz", "Kaya", "Demir", "Vural", "Şahin", "Öztürk", "Akdeniz", "Çelik", "Yıldız", "Koç", "Sun", "Mavi", "Arslan", "Doruk", "Enerji", "Alfa", "Kağıt", "Kuzey", "Ege", "Hilal"]
+        sirket_tur = ["A.Ş.", "Ltd.", "Grup", "Pazarlama", "Lojistik", "Mimarlık", "Teknoloji", "Gıda", "Sanayi", "Yazılım"]
+        sektor_list = ["İnşaat", "Tasarım", "Teknoloji", "Gıda", "Danışmanlık", "Sanayi", "Lojistik", "Reklam", "Mobilya", "Kimya"]
+        
+        cariler = []
+        for i in range(50):
+            tip = random.choice(["musteri", "tedarikci"])
+            is_company = random.choice([True, False])
+            ad = f"{random.choice(ad_list)} {random.choice(soyad_list)}"
+            if is_company:
+                ad = f"{random.choice(soyad_list)} {random.choice(sirket_tur)}"
             
-            # Suppliers (tedarikci)
-            ("Doruk Toptan Gıda", "tedarikci", 100000.0, "1231231234", "Gıda İhtisas V.D.", "Mustafa Doruk", "bilgi@dorukgida.com", "0212 222 33 44", "İstanbul", "Esenler", "Menderes Mah.", "Toptancılar Sitesi B Blok No:14", "Gıda Tedarik", "A"),
-            ("Çelik Hırdavat", "tedarikci", 50000.0, "2342342345", "Karaköy V.D.", "İbrahim Çelik", "satis@celikhirdavat.com", "0212 333 44 55", "İstanbul", "Fatih", "Kemalpaşa Mah.", "Karaköy Palas No:3", "Hırdavat & Yapı", "B"),
-            ("Global Enerji A.Ş.", "tedarikci", 150000.0, "3453453456", "Büyük Mükellefler V.D.", "Fatma Enerji", "fatura@globalenerji.com", "0312 444 0 555", "Ankara", "Çankaya", "Kavaklıdere Mah.", "Atatürk Bulvarı No:250", "Enerji & Akaryakıt", "A+"),
-            ("Alfa Ambalaj", "tedarikci", 50000.0, "4564564567", "Halkalı V.D.", "Ömer Alfa", "kutu@alfaambalaj.com", "0212 444 55 77", "İstanbul", "Küçükçekmece", "Halkalı Merkez Mah.", "Fatih Cad. No:99", "Ambalaj Sanayi", "B"),
-            ("Mega Kağıtçılık", "tedarikci", 15000.0, "5675675678", "Topkapı V.D.", "Cemil Kağıt", "siparis@megakagit.com", "0212 555 66 88", "İstanbul", "Zeytinburnu", "Maltepe Mah.", "Litros Yolu No:10", "Kırtasiye & Sarf", "C"),
-            ("Kuzey Tekstil", "tedarikci", 100000.0, "6786786789", "Güneşli V.D.", "Hasan Kuzey", "kumas@kuzeytekstil.com", "0212 666 77 99", "İstanbul", "Bağcılar", "Güneşli Mah.", "Evren Cad. No:64", "Tekstil & Hammadde", "A"),
-            ("Ege Elektrik", "tedarikci", 50000.0, "7897897890", "İzmir Kordon V.D.", "Bülent Ege", "servis@egeelektrik.com", "0232 444 88 99", "İzmir", "Konak", "Alsancak Mah.", "Kordon Boyu No:2", "Elektrik Malzeme", "B"),
-            ("Hilal Demir Sanayi", "tedarikci", 100000.0, "8908908901", "Karabük V.D.", "Ahmet Hilal", "demir@hilaldemir.com", "0370 444 11 22", "Karabük", "Merkez", "Yeşil Mah.", "Demir Çelik Bulvarı No:45", "Metal & Hammadde", "A")
-        ]
+            limit = round(random.uniform(50000, 500000), 2)
+            verg_no = f"{random.randint(1000000000, 9999999999)}"
+            kredibilite = random.choice(["A+", "A", "B", "C"])
+            sektor = random.choice(sektor_list)
+            
+            cariler.append((ad, tip, limit, verg_no, "Merkez V.D.", ad, "iletisim@sirket.com", "05550000000", "İstanbul", "Merkez", "Ana Mah.", "Ofis 1", sektor, kredibilite))
+            
         cursor.executemany('''
             INSERT INTO cari (ad, tip, limit_val, vergi_no, vergi_dairesi, yetkili_kisi, eposta, telefon, il, ilce, mahalle, adres_detay, cari_grubu, kredibilite)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', cariler)
         
-        # Fetch seeded Cari info to get IDs programmatically
         cursor.execute("SELECT id, ad, tip FROM cari")
-        all_seeded_cariler = cursor.fetchall()
+        seeded_cariler = [dict(r) for r in cursor.fetchall()]
         
-        import random
-        # Spreading dates starting from 2026-05-15 to 2026-07-18
-        start_date = datetime.date(2026, 5, 15)
-        
-        # Generate 20 transactions per Cari for EACH month starting from January 2026 to July 2026
-        # Months: 1, 2, 3, 4, 5, 6, 7. 20 * 7 = 140 transactions per Cari. Total = 22 * 140 = 3080 transactions
-        cari_islemler = []
-        for cari in all_seeded_cariler:
-            c_id = cari['id']
-            c_ad = cari['ad']
-            c_tip = cari['tip']
-            
-            for month in range(1, 8): # Jan (1) to Jul (7)
-                for i in range(1, 21): # 20 transactions per month
-                    # Spread evenly within the month
-                    day = i + random.randint(0, 8)
-                    day = min(28, max(1, day))
-                    t_date = datetime.date(2026, month, day).isoformat()
-                    
-                    odeme_tarihi = None
-                    if c_tip == 'musteri':
-                        if i % 2 == 1:
-                            # Sale/Receivable (Invoice)
-                            desc = f"{c_ad} - Ürün Satış Faturası düzenlendi ({month}. Ay - #{i})"
-                            tutar = round(random.uniform(5000.0, 25000.0) + (i * random.uniform(200.0, 800.0)), 2)
-                            tip = "alacak"
-                            
-                            # 70% chance invoice is paid
-                            if random.random() < 0.70:
-                                # 40% chance paid late (causes Findeks rating warnings)
-                                if random.random() < 0.40:
-                                    # Paid late (e.g. 35 to 50 days after invoice)
-                                    pay_day = day + random.randint(35, 50)
-                                else:
-                                    # Paid timely (e.g. 5 to 25 days after invoice)
-                                    pay_day = day + random.randint(5, 25)
-                                
-                                pay_month = month
-                                while pay_day > 28:
-                                    pay_day -= 28
-                                    pay_month += 1
-                                if pay_month <= 7:
-                                    odeme_tarihi = datetime.date(2026, pay_month, pay_day).isoformat()
-                        else:
-                            # Collection/Payment received
-                            desc = f"{c_ad} - Banka Havalesi İle Tahsilat ({month}. Ay - #{i})"
-                            tutar = round(random.uniform(4500.0, 24000.0) + (i * random.uniform(180.0, 750.0)), 2)
-                            tip = "borc"
-                    else: # Supplier
-                        if i % 2 == 1:
-                            # Purchase/Payable (Invoice)
-                            desc = f"{c_ad} - Hammadde Satın Alım Faturası ({month}. Ay - #{i})"
-                            tutar = round(random.uniform(6000.0, 30000.0) + (i * random.uniform(250.0, 1000.0)), 2)
-                            tip = "borc"
-                            
-                            if random.random() < 0.70:
-                                if random.random() < 0.40:
-                                    pay_day = day + random.randint(35, 50)
-                                else:
-                                    pay_day = day + random.randint(5, 25)
-                                    
-                                pay_month = month
-                                while pay_day > 28:
-                                    pay_day -= 28
-                                    pay_month += 1
-                                if pay_month <= 7:
-                                    odeme_tarihi = datetime.date(2026, pay_month, pay_day).isoformat()
-                        else:
-                            # Payment made
-                            desc = f"{c_ad} - Tedarikçi Ödemesi EFT ({month}. Ay - #{i})"
-                            tutar = round(random.uniform(5500.0, 29000.0) + (i * random.uniform(220.0, 950.0)), 2)
-                            tip = "alacak"
-                    
-                    cari_islemler.append((c_id, desc, tutar, tip, t_date, odeme_tarihi))
-                
-        cursor.executemany("INSERT INTO cari_islem (cari_id, tanim, tutar, tip, tarih, odeme_tarihi) VALUES (?, ?, ?, ?, ?, ?)", cari_islemler)
-        
-        # Seed Kasa & Banka Hesap
+        # 2. Seed Kasa & Banka Hesap
         hesaplar = [
             ("Merkez Kasa", "kasa", None, None, None, "TRY", "A+"),
-            ("Dış Saha Kasası", "kasa", None, None, None, "TRY", "B"),
             ("Döviz Kasası", "kasa", None, None, None, "USD", "A"),
             ("Akbank Ticari", "banka", "4489-012398", "TR450004600192384759281234", "Maslak", "TRY", "A+"),
             ("Garanti Şirket", "banka", "3320-998822", "TR920006200088112233445566", "Levent", "TRY", "A"),
-            ("Ziraat TRY", "banka", "1102-445533", "TR560001000022334455667788", "Merkez", "TRY", "B"),
             ("Vakıfbank EUR", "banka", "7740-881100", "TR120001500158007788990011", "Kadıköy", "EUR", "A")
         ]
         for h in hesaplar:
@@ -348,238 +264,182 @@ def init_db():
                 INSERT INTO kasa_banka_hesap (ad, tur, hesap_no, iban, sube, doviz_turu, bakiye, kredibilite)
                 VALUES (?, ?, ?, ?, ?, ?, 0, ?)
             ''', h)
-        
-        # Fetch seeded accounts
+            
         cursor.execute("SELECT id, ad, tur, doviz_turu FROM kasa_banka_hesap")
-        all_seeded_hesaplar = cursor.fetchall()
-        
-        # Generate 20 transactions per Account for EACH month starting from January 2026 to July 2026
-        # Months: 1, 2, 3, 4, 5, 6, 7. 20 * 7 = 140 transactions per account. Total = 7 * 140 = 980 transactions
-        kasa_banka_islemler = []
-        
-        for hesap in all_seeded_hesaplar:
-            h_id = hesap['id']
-            h_ad = hesap['ad']
-            h_tur = hesap['tur']
-            h_doviz = hesap['doviz_turu']
-            
-            for month in range(1, 8): # Jan (1) to Jul (7)
-                for i in range(1, 21): # 20 transactions per month
-                    day = i + random.randint(0, 8)
-                    day = min(28, max(1, day))
-                    t_date = datetime.date(2026, month, day).isoformat()
-                    
-                    # Pick a random Cari to link to
-                    linked_cari = random.choice(all_seeded_cariler)
-                    cari_id = linked_cari['id']
-                    cari_ad = linked_cari['ad']
-                    
-                    if h_tur == 'kasa':
-                        if i % 2 == 1:
-                            # Cash income / receipt
-                            tanim = f"Nakit Tahsilat - {cari_ad} ({month}. Ay - #{i})"
-                            tutar = round(random.uniform(1000.0, 6000.0) + (i * random.uniform(50.0, 200.0)), 2)
-                            tip = 'giris'
-                            islem_turu = 'tahsilat'
-                        else:
-                            # Cash expense
-                            tanim = f"Nakit Ödeme (Ofis & Kırtasiye) ({month}. Ay - #{i})"
-                            tutar = round(random.uniform(300.0, 2500.0) + (i * random.uniform(15.0, 80.0)), 2)
-                            tip = 'cikis'
-                            islem_turu = 'gider'
-                            cari_id = None # Not related to a Cari
-                    else: # Bank account
-                        if i % 2 == 1:
-                            # Bank transfer in
-                            tanim = f"{h_ad} Gelen EFT - {cari_ad} ({month}. Ay - #{i})"
-                            tutar = round(random.uniform(12000.0, 70000.0) + (i * random.uniform(600.0, 2500.0)), 2)
-                            tip = 'giris'
-                            islem_turu = 'tahsilat'
-                        else:
-                            # Bank transfer out
-                            tanim = f"{h_ad} Gönderilen EFT - {cari_ad} ({month}. Ay - #{i})"
-                            tutar = round(random.uniform(9000.0, 50000.0) + (i * random.uniform(500.0, 2000.0)), 2)
-                            tip = 'cikis'
-                            islem_turu = 'odeme'
-                    
-                    kasa_banka_islemler.append((h_id, cari_id, tanim, tutar, tip, t_date, islem_turu))
-        
-        cursor.executemany('''
-            INSERT INTO kasa_banka_islem (hesap_id, cari_id, tanim, tutar, tip, tarih, islem_turu)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', kasa_banka_islemler)
-        
-        # Update balances of accounts dynamically based on their transactions sum
-        cursor.execute("SELECT id FROM kasa_banka_hesap")
-        ids = [row[0] for row in cursor.fetchall()]
-        for h_id in ids:
-            cursor.execute("SELECT SUM(CASE WHEN tip='giris' THEN tutar ELSE -tutar END) FROM kasa_banka_islem WHERE hesap_id = ?", (h_id,))
-            bakiye = cursor.fetchone()[0] or 0.0
-            cursor.execute("UPDATE kasa_banka_hesap SET bakiye = ? WHERE id = ?", (bakiye, h_id))
-        
-        # Seed Stok
-        stoklar = [
-            ("Dell Latitude 5540", "Elektronik", 496),
-            ("Ergonomik Ofis Koltuğu", "Ofis Malzemeleri", 434),
-            ("Kablosuz Mouse", "Aksesuar & Sarf", 310)
-        ]
-        cursor.executemany("INSERT INTO stok (ad, kategori, adet) VALUES (?, ?, ?)", stoklar)
-        
-        # Seed Stok Islem
-        stok_islemler = [
-            ("Dell Latitude 5540 - 10 Adet Giriş", "giris", "2026-07-18"),
-            ("Ergonomik Ofis Koltuğu - 5 Adet Çıkış", "cikis", "2026-07-18"),
-            ("Kablosuz Mouse - Stok Alarmı (Kritik Eşik)", "alarm", "2026-07-17")
-        ]
-        cursor.executemany("INSERT INTO stok_islem (tanim, tip, tarih) VALUES (?, ?, ?)", stok_islemler)
-        
-        # Seed Fatura & Irsaliye
-        faturalar = [
-            ("FT-2026-00045 - Satış Faturası Oluşturuldu", 18500.0, "Ödenmedi", "2026-07-18"),
-            ("IR-2026-00021 - Sevk İrsaliyesi Hazırlandı", 0, "Bekliyor", "2026-07-18"),
-            ("FT-2026-00044 - Alış Faturası Kaydedildi", 22000.0, "Ödendi", "2026-07-17"),
-            ("FT-2026-00043 - Hizmet Faturası Ödendi", 3500.0, "Ödendi", "2026-07-14")
-        ]
-        cursor.executemany("INSERT INTO fatura_irsaliye (tanim, tutar, durum, tarih) VALUES (?, ?, ?, ?)", faturalar)
+        seeded_hesaplar = [dict(r) for r in cursor.fetchall()]
 
-        # Seed 50+ payment plan items (Receivables & Payables)
-        odeme_listesi = [
-            ("Ahmet Yılmaz", 5379.03, "gelir", "2026-07-20", "Ürün Satış Bedeli", "Bekliyor"),
-            ("Ayşe Kaya", 3089.23, "gelir", "2026-07-22", "Hizmet Bedeli Tahsilatı", "Bekliyor"),
-            ("TeknoMarket A.Ş.", 16105.23, "gelir", "2026-07-25", "Yarı Yıl Hak Edişi", "Kısmi Ödendi"),
-            ("Vural İnşaat Ltd.", 43302.14, "gelir", "2026-07-30", "Şantiye Destek Bedeli", "Bekliyor"),
-            ("Zeynep Şahin", 1322.41, "gelir", "2026-08-02", "Danışmanlık Hizmeti", "Bekliyor"),
-            ("Caner Demir", 10084.82, "gelir", "2026-08-05", "Malzeme Satışı", "Bekliyor"),
-            ("Öztürk Gıda", 13988.1, "gelir", "2026-08-10", "Toptan Gıda Satış Bedeli", "Bekliyor"),
-            ("Akdeniz Lojistik", 41143.42, "gelir", "2026-08-15", "Taşıma Hizmet Bedeli", "Bekliyor"),
-            ("Elif Çelik", 4686.38, "gelir", "2026-08-18", "Tasarım Proje Tahsilatı", "Bekliyor"),
-            ("Yıldız Mobilya", 30786.01, "gelir", "2026-08-22", "Ofis Mobilyaları Satışı", "Bekliyor"),
-            ("Maslak Yazılım", 31901.05, "gelir", "2026-08-25", "Yazılım Geliştirme Bedeli", "Kısmi Ödendi"),
-            ("Beta Kimya", 17823.77, "gelir", "2026-08-28", "Kimyasal Madde Satışı", "Bekliyor"),
-            ("Mavi Mimarlık", 22003.91, "gelir", "2026-09-02", "Proje Çizim Bedeli", "Bekliyor"),
-            ("Kaan Arslan", 7806.96, "gelir", "2026-09-05", "Montaj Hizmet Tahsilatı", "Bekliyor"),
-            ("Ahmet Yılmaz", 4724.26, "gelir", "2026-09-10", "Ek Sipariş Ödemesi", "Bekliyor"),
-            ("TeknoMarket A.Ş.", 31046.12, "gelir", "2026-09-15", "Donanım Teslimat Bedeli", "Bekliyor"),
-            ("Vural İnşaat Ltd.", 84021.4, "gelir", "2026-09-25", "2. Etap Hak Ediş Ödemesi", "Bekliyor"),
-            ("Öztürk Gıda", 21521.63, "gelir", "2026-10-01", "Gıda Sevkiyat Ödemesi", "Bekliyor"),
-            ("Akdeniz Lojistik", 39749.74, "gelir", "2026-10-10", "Lojistik Destek Tahsilatı", "Bekliyor"),
-            ("Yıldız Mobilya", 15511.28, "gelir", "2026-10-15", "Ekipman Satış Bakiyesi", "Bekliyor"),
-            ("Maslak Yazılım", 29063.64, "gelir", "2026-10-20", "Bakım Anlaşması Bedeli", "Bekliyor"),
-            ("Beta Kimya", 10622.1, "gelir", "2026-10-25", "Laboratuvar Malzeme Satışı", "Bekliyor"),
-            ("Mavi Mimarlık", 30112.54, "gelir", "2026-11-02", "Rölöve Çalışması Tahsilatı", "Bekliyor"),
-            ("Caner Demir", 5274.28, "gelir", "2026-11-10", "Yedek Parça Satış Bedeli", "Bekliyor"),
-            ("Ayşe Kaya", 2711.69, "gelir", "2026-11-15", "Eğitim Hizmet Tahsilatı", "Bekliyor"),
-            ("Doruk Toptan Gıda", 4578.03, "borç", "2026-07-21", "Toptan Ürün Tedarik Ödemesi", "Bekliyor"),
-            ("Çelik Hırdavat", 4625.09, "borç", "2026-07-24", "Şantiye Malzeme Faturası", "Bekliyor"),
-            ("Global Enerji A.Ş.", 37221.67, "borç", "2026-07-28", "Fabrika Elektrik Faturası", "Kısmi Ödendi"),
-            ("Alfa Ambalaj", 13935.28, "borç", "2026-08-01", "Koli ve Ambalaj Malzemesi", "Bekliyor"),
-            ("Mega Kağıtçılık", 6282.85, "borç", "2026-08-04", "Ofis Kırtasiye Alımları", "Bekliyor"),
-            ("Kuzey Tekstil", 15208.34, "borç", "2026-08-08", "Kumaş Tedarik Ödemesi", "Bekliyor"),
-            ("Ege Elektrik", 9139.02, "borç", "2026-08-12", "Trafo Bakım Bedeli", "Bekliyor"),
-            ("Hilal Demir Sanayi", 44481.87, "borç", "2026-08-20", "Demir Profil Alım Bedeli", "Bekliyor"),
-            ("Doruk Toptan Gıda", 10539.88, "borç", "2026-08-25", "Aylık Gıda Alım Faturası", "Bekliyor"),
-            ("Çelik Hırdavat", 4180.22, "borç", "2026-09-01", "El Aletleri Tedarik Faturası", "Bekliyor"),
-            ("Global Enerji A.Ş.", 27209.69, "borç", "2026-09-08", "Aylık Tesis Enerji Gideri", "Bekliyor"),
-            ("Alfa Ambalaj", 9843.33, "borç", "2026-09-12", "Paketleme Malzemesi Alımı", "Bekliyor"),
-            ("Mega Kağıtçılık", 5943.73, "borç", "2026-09-18", "Matbaa Baskı İşleri Ödemesi", "Bekliyor"),
-            ("Kuzey Tekstil", 18014.28, "borç", "2026-09-22", "İplik ve Kumaş Siparişi", "Bekliyor"),
-            ("Ege Elektrik", 7680.52, "borç", "2026-10-02", "Pano Kurulum Hakedişi", "Bekliyor"),
-            ("Hilal Demir Sanayi", 45276.37, "borç", "2026-10-08", "Sac Levha Sipariş Bakiyesi", "Bekliyor"),
-            ("Global Enerji A.Ş.", 25013.09, "borç", "2026-10-15", "Enerji Dağıtım Hakedişi", "Bekliyor"),
-            ("Kuzey Tekstil", 15531.57, "borç", "2026-10-22", "Kışlık Ürün Ham Hammaddesi", "Bekliyor"),
-            ("Doruk Toptan Gıda", 8083.01, "borç", "2026-11-01", "Market Reyon Siparişi", "Bekliyor"),
-            ("Çelik Hırdavat", 2905.65, "borç", "2026-11-05", "Kaynak Malzemeleri Faturası", "Bekliyor"),
-            ("Alfa Ambalaj", 7565.12, "borç", "2026-11-12", "Etiket ve Kutu Alımı", "Bekliyor"),
-            ("Mega Kağıtçılık", 4833.37, "borç", "2026-11-18", "Arşiv Klasörleri Alımı", "Bekliyor"),
-            ("Ege Elektrik", 4755.14, "borç", "2026-11-20", "Aydınlatma Sistemleri Faturası", "Bekliyor"),
-            ("Hilal Demir Sanayi", 19926.62, "borç", "2026-11-25", "Kaynak Telleri Sevkiyatı", "Bekliyor"),
-            ("Global Enerji A.Ş.", 20381.34, "borç", "2026-11-28", "Trafo Yenileme Ödemesi", "Bekliyor")
-        ]
-        # Calculate dynamic remaining outstanding balance (kalan_tutar) based on status
-        odeme_listesi_processed = []
-        for item in odeme_listesi:
-            cari_ad, tutar, tip, tarih, aciklama, durum = item
-            kalan = tutar
-            if durum == "Ödendi":
-                kalan = 0.0
-            elif durum == "Kısmi Ödendi":
-                kalan = round(tutar * 0.4, 2)
-            odeme_listesi_processed.append((cari_ad, tutar, kalan, tip, tarih, aciklama, durum))
-            
-        cursor.executemany("INSERT INTO odeme_plani (cari_ad, tutar, kalan_tutar, tip, tarih, aciklama, durum) VALUES (?, ?, ?, ?, ?, ?, ?)", odeme_listesi_processed)
+        # 3. Seed Stok (100 items)
+        kategori_list = ["Elektronik", "Ofis Malzemeleri", "Aksesuar & Sarf", "Mobilya", "Hırdavat"]
         
-    conn.commit()
-    conn.close()
+        elektronik = ["Laptop Dell XPS", "MacBook Pro 16", "Lenovo ThinkPad", "HP EliteBook", "Monitor LG 27'", "Monitor Samsung 32'", "iPad Pro", "Samsung Galaxy Tab", "Projeksiyon Cihazı", "Yazıcı HP Color"]
+        ofis = ["A4 Fotokopi Kağıdı (Koli)", "Tükenmez Kalem Seti", "Klasör Geniş (10'lu)", "Zımba ve Tel Seti", "Not Defteri Çizgili", "Evrak Rafı", "Masa Düzenleyici", "Ajanda 2026", "Yapışkanlı Not Kağıdı", "Tahta Kalemi Seti"]
+        aksesuar = ["Kablosuz Mouse Logitech", "Mekanik Klavye", "USB-C Hub 7-in-1", "HDMI Kablo 3m", "Laptop Soğutucu", "Ergonomik Mouse Pad", "Webcam 1080p", "Bluetooth Kulaklık", "Harici Disk 1TB", "Flash Bellek 128GB"]
+        mobilya = ["Ergonomik Çalışma Koltuğu", "Yönetici Masası", "Toplantı Masası (8 Kişilik)", "Kesekonlu Dolap", "Kitaplık Ahşap", "Misafir Koltuğu", "Bekleme Salonu Kanepesi", "Metal Dosya Dolabı", "Keson", "Çalışma Masası"]
+        hirdavat = ["Matkap Seti", "Tornavida Takımı (12'li)", "Pense ve Yan Keski Seti", "Şerit Metre 5m", "Çekiç", "İngiliz Anahtarı", "Alyan Seti", "Silikon Tabancası", "Vida ve Dübel Seti", "Maket Bıçağı Profesyonel"]
+        
+        stoklar = []
+        for i in range(1, 101):
+            kat = random.choice(kategori_list)
+            if kat == "Elektronik": base_name = random.choice(elektronik)
+            elif kat == "Ofis Malzemeleri": base_name = random.choice(ofis)
+            elif kat == "Aksesuar & Sarf": base_name = random.choice(aksesuar)
+            elif kat == "Mobilya": base_name = random.choice(mobilya)
+            else: base_name = random.choice(hirdavat)
+            
+            ad = f"{base_name} - Model {random.randint(100, 999)}"
+            adet = 0 # Will be populated dynamically
+            stoklar.append((ad, kat, adet))
+            
+        cursor.executemany("INSERT INTO stok (ad, kategori, adet) VALUES (?, ?, ?)", stoklar)
+        cursor.execute("SELECT id, ad, kategori, adet FROM stok")
+        seeded_stoklar = [dict(r) for r in cursor.fetchall()]
+        stok_counts = {s['id']: 0 for s in seeded_stoklar}
+
+        # 4. Generate 3000 Documents
+        start_date = date(2025, 1, 1)
+        end_date = date(2026, 7, 30)
+        days_diff = (end_date - start_date).days
+        
+        fis_count = 1
+        doc_count = 1
+        
+        # Prepare bulk inserts to be efficient
+        batch_depo = []
+        batch_stok_islem = []
+        batch_cari_islem = []
+        batch_odeme = []
+        batch_kasa = []
+        
+        for _ in range(3000):
+            c = random.choice(seeded_cariler)
+            c_id = c['id']
+            c_ad = c['ad']
+            c_tip = c['tip']
+            
+            random_days = random.randint(0, days_diff)
+            doc_date = start_date + timedelta(days=random_days)
+            doc_date_str = doc_date.isoformat()
+            
+            is_waybill = random.random() < 0.2
+            
+            if is_waybill:
+                # İrsaliye
+                belge_no = f"IR-{doc_date.year}-{fis_count:05d}"
+                fis_count += 1
+                durum = 'Teslim Edildi'
+                tanim = f"{belge_no} — {c_ad} | Sevk İrsaliyesi"
+                
+                cursor.execute("""
+                    INSERT INTO fatura_irsaliye (cari_id, belge_no, belge_turu, tanim, tutar, durum, tarih)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (c_id, belge_no, 'irsaliye', tanim, 0.0, durum, doc_date_str))
+                irsaliye_id = cursor.lastrowid
+                
+                # Multiple products per waybill
+                num_products = random.randint(1, 5)
+                for _ in range(num_products):
+                    linked_stok = random.choice(seeded_stoklar)
+                    stok_id = linked_stok['id']
+                    stok_ad = linked_stok['ad']
+                    stok_qty = random.randint(1, 50)
+                    stok_tip = 'cikis' if c_tip == 'musteri' else 'giris'
+                    stok_tip_label = "Çıkış (Satış)" if stok_tip == 'cikis' else "Giriş (Alım)"
+                    
+                    batch_depo.append((stok_id, belge_no, stok_tip, stok_qty, doc_date_str, f"{c_ad} sevk irsaliyesi", irsaliye_id))
+                    batch_stok_islem.append((f"{stok_ad} — {stok_qty} Adet {stok_tip_label}", stok_tip, doc_date_str))
+                    
+                    if stok_tip == 'giris': stok_counts[stok_id] += stok_qty
+                    else: stok_counts[stok_id] -= stok_qty
+            else:
+                # Fatura
+                prefix = f"FT-{doc_date.year}-S" if c_tip == 'musteri' else f"FT-{doc_date.year}-A"
+                belge_no = f"{prefix}{doc_count:05d}"
+                doc_count += 1
+                
+                belge_turu = 'satis_faturasi' if c_tip == 'musteri' else 'alis_faturasi'
+                tutar = round(random.uniform(500.0, 150000.0), 2)
+                # 80% paid for older invoices
+                prob_paid = 0.8 if doc_date < date(2026, 6, 1) else 0.4
+                durum = 'Ödendi' if random.random() < prob_paid else 'Ödenmedi'
+                
+                fatura_tanim = "Satış Faturası" if c_tip == 'musteri' else "Alım Faturası"
+                tanim = f"{belge_no} — {c_ad} | {fatura_tanim}"
+                
+                cursor.execute("""
+                    INSERT INTO fatura_irsaliye (cari_id, belge_no, belge_turu, tanim, tutar, durum, tarih)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (c_id, belge_no, belge_turu, tanim, tutar, durum, doc_date_str))
+                fatura_id = cursor.lastrowid
+                
+                cari_islem_tip = 'alacak' if c_tip == 'musteri' else 'borc'
+                odeme_tarihi = None
+                
+                if durum == 'Ödendi':
+                    pay_day = doc_date + timedelta(days=random.randint(1, 45))
+                    odeme_tarihi = pay_day.isoformat()
+                    
+                batch_cari_islem.append((c_id, tanim, tutar, cari_islem_tip, doc_date_str, odeme_tarihi))
+                
+                op_tip = 'gelir' if c_tip == 'musteri' else 'borç'
+                vade = doc_date + timedelta(days=30)
+                
+                if durum == 'Ödenmedi':
+                    op_durum = 'Gecikti' if vade < date.today() else 'Bekliyor'
+                    kalan = tutar
+                else:
+                    op_durum = 'Ödendi'
+                    kalan = 0.0
+                    
+                batch_odeme.append((c_ad, tutar, kalan, op_tip, vade.isoformat(), f"{belge_no} nolu fatura vadesi", op_durum))
+                
+                if durum == 'Ödendi':
+                    linked_account = random.choice(seeded_hesaplar)
+                    h_ad = linked_account['ad']
+                    
+                    kb_tip = 'giris' if c_tip == 'musteri' else 'cikis'
+                    islem_turu = 'tahsilat' if c_tip == 'musteri' else 'odeme'
+                    kb_tanim = f"{belge_no} Fatura Tahsilatı" if c_tip == 'musteri' else f"{belge_no} Fatura Ödemesi"
+                    
+                    batch_kasa.append((linked_account['id'], c_id, fatura_id, kb_tanim, tutar, kb_tip, odeme_tarihi, islem_turu))
+                    pay_cari_tip = 'borc' if c_tip == 'musteri' else 'alacak'
+                    batch_cari_islem.append((c_id, f"{h_ad} — {kb_tanim}", tutar, pay_cari_tip, odeme_tarihi, odeme_tarihi))
+
+        # Bulk inserts
+        cursor.executemany("INSERT INTO depo_hareket (stok_id, fis_no, tip, miktar, tarih, aciklama, irsaliye_id) VALUES (?, ?, ?, ?, ?, ?, ?)", batch_depo)
+        cursor.executemany("INSERT INTO stok_islem (tanim, tip, tarih) VALUES (?, ?, ?)", batch_stok_islem)
+        cursor.executemany("INSERT INTO cari_islem (cari_id, tanim, tutar, tip, tarih, odeme_tarihi) VALUES (?, ?, ?, ?, ?, ?)", batch_cari_islem)
+        cursor.executemany("INSERT INTO odeme_plani (cari_ad, tutar, kalan_tutar, tip, tarih, aciklama, durum) VALUES (?, ?, ?, ?, ?, ?, ?)", batch_odeme)
+        cursor.executemany("INSERT INTO kasa_banka_islem (hesap_id, cari_id, fatura_id, tanim, tutar, tip, tarih, islem_turu) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", batch_kasa)
+
+        # General expenses
+        gider_batch = []
+        for i in range(100):
+            doc_date = start_date + timedelta(days=random.randint(0, days_diff))
+            acc = random.choice(seeded_hesaplar)
+            gider_batch.append((acc['id'], None, None, f"Genel Ofis Gideri (#{i})", round(random.uniform(200, 3000), 2), 'cikis', doc_date.isoformat(), 'gider'))
+        cursor.executemany("INSERT INTO kasa_banka_islem (hesap_id, cari_id, fatura_id, tanim, tutar, tip, tarih, islem_turu) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", gider_batch)
+        
+        # Sync Kasa balances
+        for h in seeded_hesaplar:
+            cursor.execute("SELECT SUM(CASE WHEN tip='giris' THEN tutar ELSE -tutar END) FROM kasa_banka_islem WHERE hesap_id = ?", (h['id'],))
+            bakiye = cursor.fetchone()[0] or 0.0
+            cursor.execute("UPDATE kasa_banka_hesap SET bakiye = ? WHERE id = ?", (round(bakiye, 2), h['id']))
+            
+        # Sync Stok counts
+        for s_id, count in stok_counts.items():
+            cursor.execute("UPDATE stok SET adet = ? WHERE id = ?", (max(0, count), s_id))
+            
+        conn.commit()
+        conn.close()
     # Ek stok ve fatura verilerini ayrı bağlantıyla ekle (idempotent)
     _seed_extra_stok_fatura()
 
 
 def _seed_extra_stok_fatura():
     """
-    Single Responsibility: Sadece stok ve fatura seed işleminden sorumludur.
-    Cari bloğundan bağımsız olarak idempotent çalışır — mevcut kayıtlar varsa atlar.
+    Disabled to maintain absolute data integrity and interrelation generated by the main seed logic.
     """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute('SELECT COUNT(*) FROM stok')
-    if cursor.fetchone()[0] < 10:
-        extra_stok = [
-            ('Lenovo ThinkPad X1', 'Elektronik', 144),
-            ('Apple MacBook Air M2', 'Elektronik', 56),
-            ('LG UltraWide Monitor', 'Elektronik', 89),
-            ('Logitech MX Keys', 'Aksesuar & Sarf', 215),
-            ('USB-C Hub 7 Port', 'Aksesuar & Sarf', 380),
-            ('Ergonomik Masa', 'Ofis Malzemeleri', 67),
-            ('Çok Fonksiyonlu Yazıcı', 'Elektronik', 24),
-            ('A4 Kağıt (Koli)', 'Aksesuar & Sarf', 600),
-            ('Dosyalama Kabini', 'Ofis Malzemeleri', 45),
-            ('Web Kamera HD', 'Elektronik', 130),
-            ('Bluetooth Kulaklık', 'Aksesuar & Sarf', 98),
-            ('Projeksiyon Cihazı', 'Elektronik', 12),
-            ('Ofis Koltuğu Executive', 'Ofis Malzemeleri', 38),
-            ('Ayarlanabilir Masa Lambası', 'Ofis Malzemeleri', 155),
-        ]
-        cursor.executemany(
-            'INSERT INTO stok (ad, kategori, adet) VALUES (?, ?, ?)',
-            extra_stok
-        )
-        extra_stok_islem = [
-            ('Lenovo ThinkPad X1 — 15 Adet Giriş', 'giris', '2026-06-10'),
-            ('Apple MacBook Air M2 — 5 Adet Çıkış (Satış)', 'cikis', '2026-06-15'),
-            ('LG UltraWide Monitor — Stok Alarmı (Kritik)', 'alarm', '2026-07-01'),
-            ('Logitech MX Keys — 40 Adet Giriş', 'giris', '2026-07-05'),
-            ('Çok Fonksiyonlu Yazıcı — 3 Adet Çıkış (Servis)', 'cikis', '2026-07-08'),
-            ('Projeksiyon Cihazı — Stok Alarmı (Kritik)', 'alarm', '2026-07-10'),
-        ]
-        cursor.executemany(
-            'INSERT INTO stok_islem (tanim, tip, tarih) VALUES (?, ?, ?)',
-            extra_stok_islem
-        )
-
-    cursor.execute('SELECT COUNT(*) FROM fatura_irsaliye')
-    if cursor.fetchone()[0] < 10:
-        extra_faturalar = [
-            ('FT-2026-S00110 — Ahmet Yılmaz Ürün Satış Faturası', 12500.0, 'Ödendi', '2026-06-01'),
-            ('FT-2026-S00111 — TeknoMarket A.Ş. Donanım Teslimatı', 45000.0, 'Ödenmedi', '2026-06-05'),
-            ('FT-2026-A00050 — Doruk Toptan Gıda Alış Faturası', 18000.0, 'Ödendi', '2026-06-08'),
-            ('IR-2026-00022 — Vural İnşaat Sevk İrsaliyesi', 0.0, 'Bekliyor', '2026-06-12'),
-            ('FT-2026-S00112 — Maslak Yazılım Hizmet Faturası', 35000.0, 'Ödendi', '2026-06-18'),
-            ('FT-2026-A00051 — Kuzey Tekstil Hammadde Alımı', 28500.0, 'Ödenmedi', '2026-06-20'),
-            ('FT-2026-S00113 — Akdeniz Lojistik Taşıma Hizmeti', 9800.0, 'Ödendi', '2026-07-02'),
-            ('FT-2026-A00052 — Global Enerji Fatura Ödemesi', 67000.0, 'Ödendi', '2026-07-05'),
-            ('IR-2026-00023 — Beta Kimya Malzeme Sevkiyatı', 0.0, 'Bekliyor', '2026-07-10'),
-            ('FT-2026-S00114 — Mavi Mimarlık Proje Bedeli', 24000.0, 'Ödenmedi', '2026-07-12'),
-            ('FT-2026-A00053 — Ege Elektrik Malzeme Alımı', 15500.0, 'Ödendi', '2026-07-14'),
-            ('FT-2026-S00115 — Yıldız Mobilya Ofis Ürünleri', 31000.0, 'Ödenmedi', '2026-07-16'),
-        ]
-        cursor.executemany(
-            'INSERT INTO fatura_irsaliye (tanim, tutar, durum, tarih) VALUES (?, ?, ?, ?)',
-            extra_faturalar
-        )
-
-    conn.commit()
-    conn.close()
+    pass
 
 
 # --- Domain Query Functions ---

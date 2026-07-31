@@ -45,14 +45,83 @@ def add_fatura(cari_id, belge_no, belge_turu, tanim, tutar, durum, tarih):
     return True
 
 def update_fatura_durum(fatura_id, yeni_durum):
-    """Faturanın durumunu günceller (Ödendi/Ödenmedi)."""
+    """Faturanın durumunu günceller (Ödendi/Ödenmedi) ve kasa/cari hesap entegrasyonunu tamamlar."""
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    # 1. Fetch current invoice details
+    cursor.execute("SELECT * FROM fatura_irsaliye WHERE id = ?", (fatura_id,))
+    f_row = cursor.fetchone()
+    if not f_row:
+        conn.close()
+        return False
+        
+    f_info = dict(f_row)
+    eski_durum = f_info['durum']
+    
+    # Update status
     cursor.execute('''
         UPDATE fatura_irsaliye 
         SET durum = ? 
         WHERE id = ?
     ''', (yeni_durum, fatura_id))
+    
+    # If marked as paid, trigger financial transactions
+    if yeni_durum == 'Ödendi' and eski_durum != 'Ödendi':
+        # Check if already exists in kasa_banka_islem
+        cursor.execute("SELECT COUNT(*) FROM kasa_banka_islem WHERE fatura_id = ?", (fatura_id,))
+        exists = cursor.fetchone()[0]
+        if exists == 0:
+            # Find default cash account
+            cursor.execute("SELECT id FROM kasa_banka_hesap WHERE tur = 'kasa' LIMIT 1")
+            h_row = cursor.fetchone()
+            hesap_id = h_row['id'] if h_row else 1
+            
+            belge_no = f_info['belge_no'] or ""
+            tip = f_info['belge_turu']
+            tarih = f_info['tarih']
+            tutar = f_info['tutar']
+            cari_id = f_info['cari_id']
+            
+            kb_tip = 'giris' if 'satis' in tip or tip == 'gelir' else 'cikis'
+            islem_turu = 'tahsilat' if 'satis' in tip or tip == 'gelir' else 'odeme'
+            kb_tanim = f"{belge_no} Fatura Tahsilatı" if 'satis' in tip or tip == 'gelir' else f"{belge_no} Fatura Ödemesi"
+            
+            # Insert into kasa_banka_islem
+            cursor.execute("""
+                INSERT INTO kasa_banka_islem (hesap_id, cari_id, fatura_id, tanim, tutar, tip, tarih, islem_turu) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (hesap_id, cari_id, fatura_id, kb_tanim, tutar, kb_tip, tarih, islem_turu))
+            
+            # Update balance of the account
+            cursor.execute("""
+                UPDATE kasa_banka_hesap 
+                SET bakiye = (
+                    SELECT COALESCE(SUM(CASE WHEN tip='giris' THEN tutar ELSE -tutar END), 0.0) 
+                    FROM kasa_banka_islem 
+                    WHERE hesap_id = ?
+                )
+                WHERE id = ?
+            """, (hesap_id, hesap_id))
+            
+            # Update cari_islem
+            cursor.execute("SELECT tip FROM cari WHERE id = ?", (cari_id,))
+            c_row = cursor.fetchone()
+            is_musteri = c_row['tip'] == 'musteri' if c_row else True
+            cari_tip = 'borc' if is_musteri else 'alacak'
+            
+            cursor.execute("""
+                INSERT INTO cari_islem (cari_id, tanim, tutar, tip, tarih, odeme_tarihi)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (cari_id, kb_tanim, tutar, cari_tip, tarih, tarih))
+            
+            # Update odeme_plani
+            if belge_no:
+                cursor.execute(
+                    "UPDATE odeme_plani SET durum = 'Ödendi', kalan_tutar = 0.0 WHERE aciklama LIKE ?",
+                    (f"%{belge_no}%",)
+                )
+                
     conn.commit()
     conn.close()
     return True

@@ -255,20 +255,77 @@ class KasaBankaService:
         """
         İşlem ekler, bakiyeyi günceller,
         cari bağlantısı varsa cari_islem tablosuna da yansıtır.
+        Eğer cari ödenmemiş bir faturasıyla eşleşirse faturayı da 'Ödendi' yapar.
         """
-        self.islem_repo.create(hesap_id, tanim, tutar, islem_turu, tarih, cari_id)
+        import re
+        
+        # 1. Create the kasa_banka_islem record
+        islem_id = self.islem_repo.create(hesap_id, tanim, tutar, islem_turu, tarih, cari_id)
         self.hesap_repo.refresh_balance(hesap_id)
 
+        # 2. Check and handle Cari integrations
         if cari_id:
             hesap = self.hesap_repo.get_by_id(hesap_id)
             h_ad = hesap['ad'] if hesap else 'Hesap'
             cari_tip = 'borc' if tutar > 0 else 'alacak'
+            
             conn = self._get_conn()
             cur = conn.cursor()
+            
+            # Find matching invoice (either by doc number in description, or by exact amount)
+            matched_fatura_id = None
+            matched_belge_no = None
+            
+            # Check description for document numbers like FT-2026-00045, IR-2026-00012
+            doc_match = re.search(r'([A-Z]{2,3}-\d{4}-\d+)', tanim.upper().replace(' ', ''))
+            if doc_match:
+                belge_no_candidate = doc_match.group(1)
+                cur.execute(
+                    "SELECT id, belge_no FROM fatura_irsaliye WHERE cari_id = ? AND belge_no = ?",
+                    (cari_id, belge_no_candidate)
+                )
+                f_row = cur.fetchone()
+                if f_row:
+                    matched_fatura_id = f_row['id']
+                    matched_belge_no = f_row['belge_no']
+            
+            # If no match by document number, match by exact amount of an unpaid invoice
+            if not matched_fatura_id:
+                cur.execute(
+                    "SELECT id, belge_no FROM fatura_irsaliye "
+                    "WHERE cari_id = ? AND ABS(tutar - ?) < 0.01 AND durum = 'Ödenmedi' LIMIT 1",
+                    (cari_id, abs(tutar))
+                )
+                f_row = cur.fetchone()
+                if f_row:
+                    matched_fatura_id = f_row['id']
+                    matched_belge_no = f_row['belge_no']
+            
+            # Update matching records
+            odeme_tarihi = tarih
+            if matched_fatura_id:
+                # Update fatura_irsaliye status to 'Ödendi'
+                cur.execute(
+                    "UPDATE fatura_irsaliye SET durum = 'Ödendi' WHERE id = ?",
+                    (matched_fatura_id,)
+                )
+                # Link fatura_id to kasa_banka_islem
+                cur.execute(
+                    "UPDATE kasa_banka_islem SET fatura_id = ? WHERE id = ?",
+                    (matched_fatura_id, islem_id)
+                )
+                # Update odeme_plani status to 'Ödendi'
+                if matched_belge_no:
+                    cur.execute(
+                        "UPDATE odeme_plani SET durum = 'Ödendi', kalan_tutar = 0.0 WHERE aciklama LIKE ?",
+                        (f"%{matched_belge_no}%",)
+                    )
+            
+            # Insert into cari_islem with odeme_tarihi set to today if it was matched/paid
             cur.execute(
-                'INSERT INTO cari_islem (cari_id, tanim, tutar, tip, tarih) '
-                'VALUES (?, ?, ?, ?, ?)',
-                (cari_id, f'{h_ad} — {tanim}', abs(tutar), cari_tip, tarih),
+                'INSERT INTO cari_islem (cari_id, tanim, tutar, tip, tarih, odeme_tarihi) '
+                'VALUES (?, ?, ?, ?, ?, ?)',
+                (cari_id, f'{h_ad} — {tanim}', abs(tutar), cari_tip, tarih, odeme_tarihi),
             )
             conn.commit()
             conn.close()

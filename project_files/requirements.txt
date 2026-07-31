@@ -1,2 +1,6 @@
 flask
 pyinstaller
+langchain
+langchain-google-genai
+python-dotenv
+duckduckgo-search

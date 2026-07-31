@@ -209,21 +209,25 @@ let allFatura = [];
                 // Format Amount
                 const tutarDisplay = item.tutar > 0 ? formatCurrency(item.tutar) : '<span style="color: var(--text-light); font-size: 11px;">(Tutar Yok)</span>';
                 
-                // Action options
-                let toggleActionText = item.durum === 'Ödendi' ? 'Ödenmedi İşaretle' : (item.belge_turu === 'irsaliye' ? 'Teslim Edildi Yap' : 'Ödendi İşaretle');
-                let nextStatus = item.durum === 'Ödendi' ? 'Ödenmedi' : (item.belge_turu === 'irsaliye' ? 'Teslim Edildi' : 'Ödendi');
-
                 let unvanDisplay = item.cari_ad || 'Genel Cari';
                 if (item.cari_id) {
                     unvanDisplay = `<a href="/cari-detay/${item.cari_id}" style="color: var(--primary-color); text-decoration: none;" class="link-hover">${unvanDisplay}</a>`;
                 }
 
                 let actionBtnHtml = '';
-                if (item.durum === 'Ödenmedi' && item.belge_turu !== 'irsaliye') {
-                    const payTip = (item.belge_turu === 'satis' || item.belge_turu === 'satis_faturasi') ? 'gelir' : 'gider';
-                    actionBtnHtml = `<button class="action-btn-sm" onclick="showInvoicePaymentPopup(${item.id}, ${item.cari_id}, '${item.belge_no || 'FT-' + item.id}', ${item.tutar}, '${payTip}', () => { fetchFaturaList(); })">Ödeme Yap</button>`;
+                if (item.belge_turu === 'irsaliye') {
+                    if (item.durum !== 'Teslim Edildi') {
+                        actionBtnHtml = `<button class="action-btn-sm" onclick="changeStatus(${item.id}, 'Teslim Edildi')">Teslim Edildi Yap</button>`;
+                    }
                 } else {
-                    actionBtnHtml = `<button class="action-btn-sm" onclick="changeStatus(${item.id}, '${nextStatus}')">${toggleActionText}</button>`;
+                    if (item.durum === 'Ödenmedi') {
+                        const payTip = (item.belge_turu === 'satis' || item.belge_turu === 'satis_faturasi') ? 'gelir' : 'gider';
+                        actionBtnHtml = `<button class="action-btn-sm" onclick="showInvoicePaymentPopup(${item.id}, ${item.cari_id}, '${item.belge_no || 'FT-' + item.id}', ${item.tutar}, '${payTip}', () => { fetchFaturaList(); })">Ödeme Yap</button>`;
+                    } else if (item.durum === 'Ödendi') {
+                        actionBtnHtml = `<button class="action-btn-sm" onclick="changeStatus(${item.id}, 'Ödenmedi')">Ödenmedi İşaretle</button>`;
+                    } else {
+                        actionBtnHtml = `<button class="action-btn-sm" onclick="changeStatus(${item.id}, 'Ödendi')">Ödendi İşaretle</button>`;
+                    }
                 }
 
                 tr.innerHTML = `

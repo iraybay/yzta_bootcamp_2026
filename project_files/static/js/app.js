@@ -1169,48 +1169,81 @@ function renderAiInsights() {
     });
 }
 
+let globalChatHistory = [];
+
 // Handle AI Question Submit
 async function handleAiQuestion(event) {
     event.preventDefault();
     
     const inputEl = document.getElementById('aiQuestionInput');
-    const responseBox = document.getElementById('aiResponseBox');
-    const responseText = document.getElementById('aiResponseText');
+    const chatHistory = document.getElementById('aiChatHistory');
     const sendBtn = document.getElementById('aiSendBtn');
     
     const question = inputEl.value.trim();
     if (!question) return;
     
-    // Disable inputs and show loading state
+    // Clear input field immediately
+    inputEl.value = '';
+    
+    // Add user message to history
+    globalChatHistory.push({ role: 'user', content: question });
+    
+    // Display Chat History container
+    chatHistory.style.display = 'flex';
+    
+    // Append User message bubble
+    const userBubble = document.createElement('div');
+    userBubble.className = 'chat-bubble user';
+    userBubble.textContent = question;
+    chatHistory.appendChild(userBubble);
+    
+    // Append AI loading bubble
+    const aiBubble = document.createElement('div');
+    aiBubble.className = 'chat-bubble ai';
+    aiBubble.innerHTML = `<span class="ai-text"><i class="fa-solid fa-circle-notch fa-spin"></i> BulutAI verileri inceliyor...</span>`;
+    chatHistory.appendChild(aiBubble);
+    
+    // Auto-scroll
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+    
+    // Disable inputs
     inputEl.disabled = true;
     sendBtn.disabled = true;
-    responseBox.style.display = 'flex';
-    responseText.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> BulutAI verileri inceliyor ve analiz hazırlıyor...`;
     
     try {
         const response = await fetch('/api/ai/sor', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ soru: question })
+            body: JSON.stringify({ soru: question, history: globalChatHistory })
         });
         
-        if (!response.ok) throw new Error('Yapay zeka yanıt veremedi.');
-        const data = await response.json();
+        let textResult = '';
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            textResult = errData.message || 'Yapay zeka yanıt veremedi.';
+        } else {
+            const data = await response.json();
+            textResult = data.cevap;
+        }
         
-        // Add a simulated generation delay of 800ms
+        // Add assistant response to history
+        globalChatHistory.push({ role: 'assistant', content: textResult });
+        
+        // Add a simulated generation delay of 400ms for smoothness
         setTimeout(() => {
-            responseText.innerHTML = data.cevap;
+            aiBubble.innerHTML = `<span class="ai-text">${textResult}</span>`;
             inputEl.disabled = false;
             sendBtn.disabled = false;
-            inputEl.value = '';
             inputEl.focus();
-        }, 800);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }, 400);
         
     } catch (error) {
         console.error('AI Ask Error:', error);
-        responseText.innerHTML = `<span style="color: var(--danger-color);"><i class="fa-solid fa-triangle-exclamation"></i> Hata: Yanıt alınamadı. Lütfen daha sonra tekrar deneyin.</span>`;
+        aiBubble.innerHTML = `<span class="ai-text" style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Bağlantı hatası: Sorunuza yanıt alınamadı.</span>`;
         inputEl.disabled = false;
         sendBtn.disabled = false;
+        chatHistory.scrollTop = chatHistory.scrollHeight;
     }
 }
 

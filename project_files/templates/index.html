@@ -157,9 +157,8 @@
                 
                 <!-- AI Ask Box (Chatbot input inside panel) -->
                 <div class="ai-ask-container">
-                    <div class="ai-response-box" id="aiResponseBox" style="display: none;">
-                        <div class="ai-avatar"><i class="fa-solid fa-robot"></i></div>
-                        <div class="ai-text" id="aiResponseText"></div>
+                    <div class="ai-chat-history" id="aiChatHistory" style="display: none;">
+                        <!-- Messages dynamically added here -->
                     </div>
                     <form class="ai-ask-form" id="aiAskForm" onsubmit="handleAiQuestion(event)">
                         <input type="text" id="aiQuestionInput" placeholder="BulutAI Asistanına finans, kasa veya envanterle ilgili soru sorun... (Örn: Kasa durumum nedir?)">
@@ -216,7 +215,7 @@
             </section>
 
             <!-- BLOCK 2: Kasa ve Banka Yönetimi -->
-            <section class="card-tile kasa-tile" id="tileKasa" onclick="showSectionDetail('kasa')">
+            <section class="card-tile kasa-tile" id="tileKasa" onclick="location.href='/kasa-hareketler'">
                 <div class="tile-header">
                     <div class="tile-icon-wrapper">
                         <i class="fa-solid fa-vault"></i>
@@ -252,7 +251,7 @@
             </section>
 
             <!-- BLOCK 3: Stok Takibi -->
-            <section class="card-tile stok-tile" id="tileStok" onclick="showSectionDetail('stok')">
+            <section class="card-tile stok-tile" id="tileStok" onclick="location.href='/stok-listesi?tab=hareketler'">
                 <div class="tile-header">
                     <div class="tile-icon-wrapper">
                         <i class="fa-solid fa-box-open"></i>
@@ -291,7 +290,7 @@
             </section>
 
             <!-- BLOCK 4: Fatura ve İrsaliye İşlemleri -->
-            <section class="card-tile fatura-tile" id="tileFatura" onclick="showSectionDetail('fatura')">
+            <section class="card-tile fatura-tile" id="tileFatura" onclick="location.href='/fatura-irsaliye'">
                 <div class="tile-header">
                     <div class="tile-icon-wrapper">
                         <i class="fa-solid fa-file-invoice-dollar"></i>
