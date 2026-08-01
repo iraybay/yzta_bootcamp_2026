@@ -150,6 +150,15 @@
                 </div>
             </div>
             <div class="ai-card-body">
+                
+                <div style="margin-bottom: 20px;">
+                    <button type="button" id="btnAiOzet" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #8a2be2 0%, #4b0082 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: opacity 0.3s;">
+                        <i class="fa-solid fa-robot"></i> Son Kasa/Banka Durumunu Özetle
+                    </button>
+                    <div id="aiOzetMetni" style="display: none; margin-top: 12px; padding: 15px; background: rgba(138, 43, 226, 0.08); border-left: 4px solid #8a2be2; border-radius: 6px; font-size: 13.5px; line-height: 1.5; color: var(--text-primary);">
+                    </div>
+                </div>
+                
                 <div class="ai-insights-list" id="aiInsightsList">
                     <!-- Dynamic insights rendered by JS -->
                     <div class="insight-item"><i class="fa-solid fa-circle-notch fa-spin"></i> İçgörüler hazırlanıyor...</div>
@@ -437,6 +446,42 @@
 
 {% block scripts %}
 <script src="/static/js/app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const btnOzet = document.getElementById('btnAiOzet');
+    if (btnOzet) {
+        btnOzet.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const ozetAlani = document.getElementById('aiOzetMetni');
+            
+            this.disabled = true;
+            this.style.opacity = "0.7";
+            this.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> BulutAI Analiz Ediyor...';
+            
+            ozetAlani.style.display = 'block';
+            ozetAlani.innerHTML = "<em>Son işlemler inceleniyor, lütfen bekleyin...</em>";
+            
+            try {
+                const response = await fetch('/api/ai2/finans-ozeti');
+                const data = await response.json();
+                
+                if(data.status === "success") {
+                    const temizMetin = data.ozet.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    ozetAlani.innerHTML = "<strong style='color: #4b0082;'><i class='fa-solid fa-check-circle'></i> Yönetici Özeti:</strong><br><br>" + temizMetin;
+                } else {
+                    ozetAlani.innerHTML = "<strong style='color: red;'>Hata:</strong> " + data.error;
+                }
+            } catch (error) {
+                ozetAlani.innerHTML = "<strong style='color: red;'>Hata:</strong> Sunucuya bağlanılamadı.";
+            } finally {
+                this.disabled = false;
+                this.style.opacity = "1";
+                this.innerHTML = '<i class="fa-solid fa-robot"></i> Son Kasa/Banka Durumunu Özetle';
+            }
+        });
+    }
+});
+</script>
 <script>
 function showAddStokModal() {
     Swal.fire({
