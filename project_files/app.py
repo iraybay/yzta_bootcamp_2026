@@ -64,6 +64,18 @@ app = Flask(__name__,
             static_folder=static_folder,
             template_folder=template_folder)
 
+from flask import session, redirect, url_for, request
+
+app.secret_key = os.environ.get("SECRET_KEY", "bulutis_cok_gizli_ve_guvenli_anahtar_2026")
+
+@app.before_request
+def guvenlik_duvari():
+    izin_verilenler = ['auth.login', 'static']
+    
+    if request.endpoint and request.endpoint not in izin_verilenler:
+        if 'logged_in' not in session:
+            return redirect(url_for('auth.login'))
+
 # Check and start Ollama service on initialization
 check_and_start_ollama()
 

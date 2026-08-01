@@ -4,7 +4,8 @@ from .kasa import kasa_bp
 from .stok import stok_bp
 from .fatura import fatura_bp
 from .ai import ai_bp
-from .yapay_zeka import yapay_zeka_bp
+from .ai2 import yapay_zeka_bp
+from .auth import auth_bp
 
 def register_routers(app):
     app.register_blueprint(main_bp)
@@ -14,3 +15,4 @@ def register_routers(app):
     app.register_blueprint(fatura_bp, url_prefix='/api/fatura')
     app.register_blueprint(ai_bp, url_prefix='/api/ai')
     app.register_blueprint(yapay_zeka_bp, url_prefix='/api/yapay_zeka')
+    app.register_blueprint(auth_bp)
