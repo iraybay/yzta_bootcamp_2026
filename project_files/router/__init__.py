@@ -5,7 +5,6 @@ from .stok import stok_bp
 from .fatura import fatura_bp
 from .ai import ai_bp
 from .ai2 import yapay_zeka_bp
-from .auth import auth_bp
 
 def register_routers(app):
     app.register_blueprint(main_bp)
