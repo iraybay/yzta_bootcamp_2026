@@ -14,3 +14,4 @@ def register_routers(app):
     app.register_blueprint(fatura_bp, url_prefix='/api/fatura')
     app.register_blueprint(ai_bp, url_prefix='/api/ai')
     app.register_blueprint(yapay_zeka_bp, url_prefix='/api/yapay_zeka')
+    app.register_blueprint(auth_bp)
