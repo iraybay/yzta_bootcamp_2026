@@ -26,14 +26,16 @@ Bu yöntem bulut üzerinden çalıştığı için bilgisayarınızı yormaz, fan
 Bu yöntem tamamen bilgisayarınızda çalışır, internet bağlantısı gerektirmez ancak bilgisayarınızı yorabilir.
 1. [ollama.com](https://ollama.com/) adresinden işletim sisteminize uygun Ollama uygulamasını indirin ve kurun.
 2. Ollama uygulamasını çalıştırın.
-3. Bilgisayarınızın terminalini (Windows'ta CMD, Mac'te Terminal) açın ve yerel Türkçe modelimizi indirmek için şu komutu çalıştırın:
+3. Bilgisayarınızın terminalini (Windows'ta CMD, Mac'te Terminal) açın ve yerel modellerimizi (ana model olarak gemma2:9b, hızlı asistan için phi3) indirmek için şu komutları çalıştırın:
    ```bash
    ollama pull gemma2:9b
+   ollama pull phi3
    ```
 4. Proje klasöründeki `.env.template` dosyasının adını **`.env`** olarak değiştirin:
    ```env
    LLM_PROVIDER=ollama
    OLLAMA_MODEL=gemma2:9b
+   OLLAMA_SMALL_MODEL=phi3
    OLLAMA_URL=http://localhost:11434/api/chat
    ```
 

@@ -22,7 +22,23 @@ call .venv\Scripts\activate
 pip install -r requirements.txt
 
 echo.
-echo [3/3] Uygulama baslatiliyor... (Tarayicida otomatik acilacaktir)
+where ollama >nul 2>nul
+if %ERRORLEVEL% equ 0 (
+    echo [3/4] Yerel yapay zeka modelleri kontrol ediliyor (gemma2:9b ve phi3)...
+    ollama pull gemma2:9b
+    ollama pull phi3
+) else (
+    echo [!] Ollama bilgisayarinizda kurulu degil. Otomatik olarak indiriliyor...
+    curl -L https://ollama.com/download/OllamaSetup.exe -o OllamaSetup.exe
+    echo Kurulum ekrani acilacak. Lutfen kurulumu tamamlayin...
+    start /wait OllamaSetup.exe
+    echo Kurulum tamamlandiktan sonra lutfen bu pencereyi kapatin ve baslatici dosyayi yeniden calistirin!
+    pause
+    exit
+)
+
+echo.
+echo [4/4] Uygulama baslatiliyor... (Tarayicida otomatik acilacaktir)
 python app.py
 
 pause

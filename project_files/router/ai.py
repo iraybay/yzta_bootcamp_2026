@@ -53,12 +53,12 @@ def format_markdown_to_html(text):
         text = text[:-4] if text.endswith('<br>') else text[:-1]
     return text.strip()
 
-def run_llm_chain(prompt_text, system_message=None, history=None):
+def run_llm_chain(prompt_text, system_message="", history=None, is_complex=False):
     """Lokal Ollama veya Bulut Gemini API kullanarak LLM çalıştırır."""
     from dotenv import load_dotenv
     load_dotenv(override=True)
     
-    provider = os.environ.get("LLM_PROVIDER", "ollama").lower()
+    provider = os.environ.get("LLM_PROVIDER", "gemini").lower()
     
     if provider == "gemini":
         api_key = os.environ.get("GEMINI_API_KEY")
@@ -135,8 +135,12 @@ def run_llm_chain(prompt_text, system_message=None, history=None):
         
     # Local Ollama fallback
     if provider == "ollama":
+        if is_complex:
+            model_name = os.environ.get("OLLAMA_MODEL", "gemma2:9b")
+        else:
+            model_name = os.environ.get("OLLAMA_SMALL_MODEL", os.environ.get("OLLAMA_MODEL", "gemma2:9b"))
+            
         ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/chat")
-        model_name = os.environ.get("OLLAMA_MODEL", "gemma2:9b")
         
         messages = []
         if system_message:
@@ -563,7 +567,7 @@ Kullanıcı Sorusu:
 """
     
     try:
-        cevap = run_llm_chain(prompt, system_prompt, history)
+        cevap = run_llm_chain(prompt, system_prompt, history, is_complex=False)
         formatted_cevap = format_markdown_to_html(cevap)
         
         # No SQL query is printed at the bottom as requested
@@ -611,7 +615,7 @@ Kullanıcının Cari Hakkındaki Sorusu:
 """
     
     try:
-        cevap = run_llm_chain(prompt, system_prompt, history)
+        cevap = run_llm_chain(prompt, system_prompt, history, is_complex=False)
         formatted_cevap = format_markdown_to_html(cevap)
         return jsonify({"success": True, "cevap": formatted_cevap})
     except Exception as e:
@@ -677,7 +681,7 @@ Aşağıdaki verileri inceleyip istenen JSON formatında rapor üret:
     net_ratio = (payment_sum / invoice_sum) if invoice_sum > 0 else 1.0
     
     try:
-        llm_response = run_llm_chain(prompt, system_prompt).strip()
+        llm_response = run_llm_chain(prompt, system_prompt, is_complex=False).strip()
         
         # Robust JSON extraction using regex
         import re
@@ -762,7 +766,7 @@ def ask_stok_question():
     web_context = ""
     if any(k in soru.lower() for k in search_keywords):
         try:
-            from ddgs import DDGS
+            from duckduckgo_search import DDGS
             search_query = soru + " fiyat"
             results = DDGS().text(search_query, max_results=3)
             web_context = "### Canlı İnternet Arama Sonuçları:\n"
@@ -846,19 +850,20 @@ def ask_stok_question():
     
     system_prompt = (
         "Sen BulutAI, Bulutİş ERP sisteminin Stok ve Tedarik asistanısın. "
-        "Aşağıdaki sistem verilerine (varsa web arama sonuçlarına) dayanarak kullanıcının stoklarla ilgili sorusuna Türkçe cevap ver.\n"
-        "ÇOK ÖNEMLİ KURALLAR (TOKEN TASARRUFU İÇİN):\n"
-        "1. SADECE VE SADECE kullanıcının sorduğu spesifik soruya yanıt ver. Ekstra açıklama, tavsiye veya genel özet kesinlikle ekleme.\n"
-        "2. Yanıtın olabildiğince kısa olsun (mümkünse tek bir cümle veya kelime öbeği). Uzun uzadıya yorum yapma.\n"
-        "3. Kullanıcı genel bir özet (tüm stok durumu) istemedikçe, genel envanter veya diğer ürünlerden bahsetme.\n"
-        "4. Asla markdown biçimlendirmesi (###, **, *, ***, #, vb.) kullanma. Önemli kelimeleri <strong> </strong> arasına al.\n"
-        "5. Satır başları veya listelemeler için direkt <br> veya <ul><li> etiketlerini kullan."
+        "Aşağıdaki sistem verilerine ve 'Canlı İnternet Arama Sonuçları'na dayanarak kullanıcının sorusuna cevap ver.\n"
+        "ÇOK ÖNEMLİ KURALLAR:\n"
+        "1. SADECE kullanıcının sorduğu spesifik soruya yanıt ver. Uzun uzadıya yorum yapma.\n"
+        "2. Kullanıcı genel bir özet istemedikçe tüm ürünlerden bahsetme.\n"
+        "3. Asla markdown biçimlendirmesi (###, **, *, vb.) kullanma. Önemli kelimeleri <strong> </strong> arasına al.\n"
+        "4. Satır başları veya listelemeler için direkt <br> veya <ul><li> etiketlerini kullan.\n"
+        "5. EĞER kullanıcı fiyat soruyorsa ve sistem stoklarında (veritabanında) fiyat yoksa, AMA 'Canlı İnternet Arama Sonuçları' kısmında fiyatlar geldiyse; KESİNLİKLE internetteki o güncel piyasa fiyatlarını okuyarak kullanıcıya doğrudan bu fiyatları söyle! 'Sistemde fiyat yok' deme.\n"
+        "6. İnternet arama sonuçlarından fiyat bilgisi veriyorsan, ilgili sitenin bağlantısını KESİNLİKLE tıklanabilir HTML linki olarak ver. Şablon: <a href=\"GERÇEK_LINK_ADRESI\" target=\"_blank\">Tıkla ve Siteye Git</a>"
     )
     
     prompt = f"Bağlam:\n{combined_context}\n\nSoru: {soru}"
     
     try:
-        cevap = run_llm_chain(prompt, system_prompt, history)
+        cevap = run_llm_chain(prompt, system_prompt, history, is_complex=False)
         formatted_cevap = format_markdown_to_html(cevap)
         return jsonify({"success": True, "cevap": formatted_cevap})
     except Exception as e:
