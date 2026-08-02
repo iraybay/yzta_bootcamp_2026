@@ -15,6 +15,11 @@ else
     echo "[1/3] Sanal ortam zaten mevcut."
 fi
 
+if [ ! -f ".env" ]; then
+    echo ".env dosyasi bulunamadi. .env.template kopyalaniyor..."
+    cp .env.template .env
+fi
+
 echo "[2/3] Sanal ortam aktif ediliyor ve kutuphaneler yukleniyor..."
 source .venv/bin/activate
 pip install -r requirements.txt

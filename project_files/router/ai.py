@@ -110,8 +110,8 @@ def run_llm_chain(prompt_text, system_message=None, history=None):
                 
                 # Check for rate limit
                 if response.status_code == 429:
-                    print(f"[!] Gemini model {model_name} returned 429. Trying next model...", flush=True)
-                    continue
+                    print(f"[!] Gemini API kotası doldu (429). Doğrudan yerel modele (Ollama) geçiliyor...", flush=True)
+                    break
                     
                 response.raise_for_status()
                 res_data = response.json()
@@ -121,19 +121,22 @@ def run_llm_chain(prompt_text, system_message=None, history=None):
                 if not raw_content:
                     raise ValueError("Gemini API boş bir yanıt döndürdü.")
                 return raw_content
+            except requests.exceptions.ConnectionError as e:
+                print(f"[!] İnternet bağlantısı yok veya API'ye ulaşılamıyor: {str(e)}. Doğrudan yerel modele (Ollama) geçiliyor...", flush=True)
+                break
             except Exception as e:
                 print(f"[!] Error calling Gemini model {model_name}: {str(e)}. Trying next...", flush=True)
                 last_exception = e
                 continue
                 
-        # If all Gemini models fail, fall back to Ollama
-        print("[!] All Gemini models failed or rate-limited. Falling back to local Ollama (Gemma)...", flush=True)
+        # If all Gemini models fail, or internet is down, fall back to Ollama
+        print("[!] Tüm Gemini modelleri başarısız oldu, kota doldu (429) veya internet yok. Yerel Ollama modeline dönülüyor...", flush=True)
         provider = "ollama"
         
     # Local Ollama fallback
     if provider == "ollama":
         ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/chat")
-        model_name = os.environ.get("OLLAMA_MODEL", "llama3")
+        model_name = os.environ.get("OLLAMA_MODEL", "gemma2:9b")
         
         messages = []
         if system_message:
@@ -211,9 +214,18 @@ def get_global_rag_context(soru=None):
     # 1. Fetch stock items
     all_stocks = []
     critical_products = []
+    stock_movements = []
     if is_stok_query:
         cursor.execute("SELECT ad, kategori, adet FROM stok ORDER BY ad ASC")
         all_stocks = [dict(r) for r in cursor.fetchall()]
+        
+        cursor.execute("""
+            SELECT h.tip, h.miktar, h.tarih, h.aciklama, s.ad as stok_ad
+            FROM depo_hareket h
+            JOIN stok s ON h.stok_id = s.id
+            ORDER BY h.tarih DESC, h.id DESC LIMIT 20
+        """)
+        stock_movements = [dict(r) for r in cursor.fetchall()]
     else:
         cursor.execute("SELECT ad, adet FROM stok WHERE adet < 15")
         critical_products = [dict(r) for r in cursor.fetchall()]
@@ -275,6 +287,12 @@ def get_global_rag_context(soru=None):
         for p in all_stocks:
             status_label = " (KRİTİK STOK)" if p['adet'] < 15 else ""
             context += f"- **{p['ad']}** (Kategori: {p['kategori']}) | Stok Miktarı: {p['adet']} adet{status_label} | Kritik Sınır: 15 adet\n"
+            
+        if stock_movements:
+            context += "\n### Son Stok Hareketleri (Giriş/Çıkış İşlemleri)\n"
+            for m in stock_movements:
+                islem = m['tip'].upper()
+                context += f"- **{m['stok_ad']}** | İşlem: {islem} | Miktar: {m['miktar']} | Tarih: {m['tarih']} | Açıklama: {m['aciklama']}\n"
     elif critical_products:
         context += "\n### Kritik Stok Seviyesindeki Ürünler Detayı\n"
         for p in critical_products:
@@ -349,7 +367,10 @@ def get_rag_context_for_cari(cari_id):
                 })
                 
     bakiye = total_invoiced - total_paid
-    bakiye_yon = "Müşterinin Şirkete Borcu Var (Alacak Bakiyemiz)" if bakiye >= 0 else "Şirketin Tedarikçiye Borcu Var (Borç Bakiyemiz)"
+    if is_musteri:
+        bakiye_yon = "Müşterinin Şirkete Borcu Var (Alacak Bakiyemiz)" if bakiye >= 0 else "Müşterinin Şirketten Alacağı Var (Bizim Fazla Ödememiz)"
+    else:
+        bakiye_yon = "Şirketin Tedarikçiye Borcu Var (Bizim Borcumuz)" if bakiye >= 0 else "Tedarikçinin Şirkete Borcu Var (Bizim Fazla Ödememiz / Alacağımız)"
     
     context = f"""
 ### Cari Hesap Künye Bilgileri
@@ -436,11 +457,20 @@ VERİTABANI TABLO ŞEMALARI VE ALANLARI:
    - tip (TEXT): 'giris' (tahsilat/gelir) veya 'cikis' (ödeme/gider)
    - tarih (TEXT): 'YYYY-MM-DD'
    - islem_turu (TEXT): 'tahsilat', 'odeme', 'transfer', 'gelir', 'gider'
+7. `depo_hareket` (Stok giriş, çıkış ve geçmiş işlemleri)
+   - id (INTEGER)
+   - stok_id (INTEGER) -> stok.id
+   - fis_no (TEXT)
+   - tip (TEXT): 'giris', 'cikis', 'fire', 'sayim_fazlasi'
+   - miktar (INTEGER)
+   - tarih (TEXT): 'YYYY-MM-DD'
+   - aciklama (TEXT)
 
 
 Örnek Sorular ve Çıktılar:
 Soru: Kaç tane kasam var?
 Çıktı: SELECT count(*) FROM kasa_banka_hesap WHERE tur = 'kasa';
+
 
 Soru: Aksoy İnşaat'ın kredibilitesi nedir?
 Çıktı: SELECT kredibilite FROM cari WHERE ad LIKE '%Aksoy İnşaat%';
@@ -788,6 +818,26 @@ def ask_stok_question():
         db_context += "\n### Güncel Stok Listesi (Ürünler ve Adetleri):\n"
         for s in stoklar:
             db_context += f"- {s.get('ad')}: {s.get('adet', 0)} adet\n"
+            
+        # 7. Son Stok Hareketleri (Giriş/Çıkış işlemleri)
+        from repositories.db_core import get_db_connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT h.tip, h.miktar, h.tarih, h.aciklama, s.ad as stok_ad
+            FROM depo_hareket h
+            JOIN stok s ON h.stok_id = s.id
+            ORDER BY h.tarih DESC, h.id DESC LIMIT 30
+        """)
+        hareketler = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        
+        if hareketler:
+            db_context += "\n### Son 30 Stok Hareketi (Giriş ve Çıkış İşlemleri):\n"
+            for h in hareketler:
+                islem = h['tip'].upper()
+                db_context += f"- Ürün: {h['stok_ad']} | İşlem Tipi: {islem} | Miktar: {h['miktar']} | Tarih: {h['tarih']} | Açıklama: {h['aciklama']}\n"
+
 
     except Exception as e:
         print(f"DB context error: {e}")

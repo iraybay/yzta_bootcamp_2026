@@ -12,6 +12,11 @@ if not exist ".venv" (
     echo [1/3] Sanal ortam zaten mevcut.
 )
 
+if not exist ".env" (
+    echo .env dosyasi bulunamadi. .env.template kopyalaniyor...
+    copy .env.template .env
+)
+
 echo [2/3] Sanal ortam aktif ediliyor ve kutuphaneler yukleniyor...
 call .venv\Scripts\activate
 pip install -r requirements.txt
