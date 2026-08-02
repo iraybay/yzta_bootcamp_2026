@@ -11,12 +11,13 @@ def add_stok_urun():
     ad = data.get('ad')
     kategori = data.get('kategori', 'Elektronik')
     adet = int(data.get('adet', 0))
+    kritik_seviye = int(data.get('kritik_seviye', 10))
     
-    if not ad or adet <= 0:
-        return jsonify({"success": False, "message": "Ürün adı ve adet zorunludur."}), 400
+    if not ad or adet < 0:
+        return jsonify({"success": False, "message": "Ürün adı zorunludur ve adet sıfırdan küçük olamaz."}), 400
         
     try:
-        add_stok_item(ad, kategori, adet)
+        add_stok_item(ad, kategori, adet, kritik_seviye)
         updated_data = get_dashboard_data()
         return jsonify({"success": True, "data": updated_data['stok']})
     except Exception as e:

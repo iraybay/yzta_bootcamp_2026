@@ -94,7 +94,8 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ad TEXT NOT NULL,
             kategori TEXT NOT NULL,
-            adet INTEGER DEFAULT 0
+            adet INTEGER DEFAULT 0,
+            kritik_seviye INTEGER DEFAULT 10
         )
     ''')
     
@@ -278,15 +279,13 @@ def init_db():
         hirdavat = ["Matkap Seti", "Tornavida Takımı (12'li)", "Pense ve Yan Keski Seti", "Şerit Metre 5m", "Çekiç", "İngiliz Anahtarı", "Alyan Seti", "Silikon Tabancası", "Vida ve Dübel Seti", "Maket Bıçağı Profesyonel"]
         
         stoklar = []
-        for i in range(1, 101):
-            kat = random.choice(kategori_list)
-            if kat == "Elektronik": base_name = random.choice(elektronik)
-            elif kat == "Ofis Malzemeleri": base_name = random.choice(ofis)
-            elif kat == "Aksesuar & Sarf": base_name = random.choice(aksesuar)
-            elif kat == "Mobilya": base_name = random.choice(mobilya)
-            else: base_name = random.choice(hirdavat)
-            
-            ad = f"{base_name} - Model {random.randint(100, 999)}"
+        all_items = [(name, "Elektronik") for name in elektronik] + \
+                    [(name, "Ofis Malzemeleri") for name in ofis] + \
+                    [(name, "Aksesuar & Sarf") for name in aksesuar] + \
+                    [(name, "Mobilya") for name in mobilya] + \
+                    [(name, "Hırdavat") for name in hirdavat]
+        
+        for ad, kat in all_items:
             adet = 0 # Will be populated dynamically
             stoklar.append((ad, kat, adet))
             

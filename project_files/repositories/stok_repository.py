@@ -4,7 +4,7 @@ def get_stok_liste():
     """Tüm stok kalemlerini listeler, adet bilgisini depo_hareket sorgusuyla dinamik hesaplar."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM stok ORDER BY id ASC")
+    cursor.execute("SELECT id, ad, kategori, adet, kritik_seviye FROM stok ORDER BY id ASC")
     stoklar = [dict(row) for row in cursor.fetchall()]
     
     for s in stoklar:
@@ -39,12 +39,12 @@ def get_stok_hareketler():
     conn.close()
     return data
 
-def add_stok(ad, kategori, adet=0):
+def add_stok(ad, kategori, adet=0, kritik_seviye=10):
     """Yeni stok kalemi ekler ve gerekirse depo_hareket tablosuna açılış kaydı ekler."""
     import datetime
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO stok (ad, kategori, adet) VALUES (?, ?, ?)", (ad, kategori, int(adet)))
+    cursor.execute("INSERT INTO stok (ad, kategori, adet, kritik_seviye) VALUES (?, ?, ?, ?)", (ad, kategori, int(adet), int(kritik_seviye)))
     new_id = cursor.lastrowid
     
     if int(adet) > 0:
@@ -131,15 +131,15 @@ def add_stok_hareket(stok_id, tip, miktar, aciklama, cari_id=None):
     conn.close()
     return True, "Hareket işlendi"
 
-def add_stok_item(ad, kategori, adet=0):
+def add_stok_item(ad, kategori, adet=0, kritik_seviye=10):
     """add_stok ile aynı işlevi görür."""
-    return add_stok(ad, kategori, adet)
+    return add_stok(ad, kategori, adet, kritik_seviye)
 
-def update_stok(stok_id, ad, kategori):
+def update_stok(stok_id, ad, kategori, kritik_seviye=10):
     """Stok kalemi bilgilerini günceller."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("UPDATE stok SET ad = ?, kategori = ? WHERE id = ?", (ad, kategori, stok_id))
+    cursor.execute("UPDATE stok SET ad = ?, kategori = ?, kritik_seviye = ? WHERE id = ?", (ad, kategori, int(kritik_seviye), stok_id))
     conn.commit()
     conn.close()
     return True

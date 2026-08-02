@@ -44,12 +44,13 @@
     <div class="bg-orb orb-2"></div>
     <div class="bg-orb orb-3"></div>
 
-    <a href="/logout" style="color: red; font-size: 12px; text-decoration: none;"><i class="fa-solid fa-power-off"></i> Çıkış Yap</a>
-
     <div class="app-container">
         {% block content %}{% endblock %}
     </div>
 
+    <!-- Generic Table Sorter -->
+    <script src="{{ url_for('static', filename='js/table_sort.js') }}"></script>
+    
     {% block scripts %}{% endblock %}
 </body>
 </html>

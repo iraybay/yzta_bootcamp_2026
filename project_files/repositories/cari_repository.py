@@ -33,7 +33,10 @@ def get_all_cariler():
                 elif t_tip == 'alacak':
                     total_payments += t_tutar
                     
-        c['bakiye'] = round(total_invoices - total_payments, 2)
+        if is_musteri:
+            c['bakiye'] = round(total_invoices - total_payments, 2)
+        else:
+            c['bakiye'] = round(total_payments - total_invoices, 2)
         
     conn.close()
     return cariler

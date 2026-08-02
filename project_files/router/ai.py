@@ -747,27 +747,48 @@ def ask_stok_question():
     try:
         from repositories.stok_repository import get_stok_liste
         stoklar = get_stok_liste()
-        kritik_stoklar = [s for s in stoklar if s.get('adet', 0) < 10]
-        db_context += "### Sistemdeki Kritik Stoklar (10 adetin altındakiler):\n"
+        
+        # 2. Sıfır Stok (Yok Satanlar)
+        sifir_stoklar = [s for s in stoklar if s.get('adet', 0) == 0]
+        db_context += "### Sıfır Stok (Yok Satanlar):\n"
+        if sifir_stoklar:
+            for ss in sifir_stoklar:
+                db_context += f"- {ss['ad']} (Kategori: {ss['kategori']})\n"
+        else:
+            db_context += "- Şu an stoğu tamamen bitmiş (0 adet) ürün bulunmuyor.\n"
+            
+        kritik_stoklar = [s for s in stoklar if s.get('adet', 0) < s.get('kritik_seviye', 10)]
+        db_context += "\n### Sistemdeki Kritik Stoklar (Kritik Seviyenin Altındakiler):\n"
         if kritik_stoklar:
             for ks in kritik_stoklar:
-                db_context += f"- {ks['ad']} (Kategori: {ks['kategori']}) - Mevcut: {ks['adet']} adet\n"
+                db_context += f"- {ks['ad']} (Kategori: {ks['kategori']}) - Mevcut: {ks['adet']} adet (Kritik Sınır: {ks.get('kritik_seviye', 10)})\n"
         else:
-            db_context += "Kritik seviyede (10 adetin altında) stok bulunmamaktadır.\n"
+            db_context += "Kritik seviyenin altında stok bulunmamaktadır.\n"
             
-        from repositories.stok_repository import get_stok_hareketler
-        hareketler = get_stok_hareketler()
-        cikislar = [h for h in hareketler if h.get('tip') == 'cikis' or h.get('tip') == 'satis']
-        
-        db_context += "\n### Son 500 Stok Hareketi Özeti (Çıkışlar/Satışlar):\n"
+        # 3. Kategori Bazlı Özet
         import collections
-        cikis_count = collections.defaultdict(int)
-        for c in cikislar:
-            cikis_count[c.get('stok_ad', 'Bilinmeyen')] += c.get('miktar', 0)
+        kategori_count = collections.defaultdict(int)
+        kategori_adet = collections.defaultdict(int)
+        for s in stoklar:
+            cat = s.get('kategori', 'Diğer') or 'Diğer'
+            kategori_count[cat] += 1
+            kategori_adet[cat] += s.get('adet', 0)
             
-        for name, count in list(cikis_count.items())[:10]:
-            db_context += f"- {name}: Yakın zamanda toplam {count} adet çıkış/satış yapılmış.\n"
+        db_context += "\n### Kategori Bazlı Özet:\n"
+        for cat, count in kategori_count.items():
+            db_context += f"- {cat} Kategorisi: {count} farklı çeşit ürün, depoda toplam {kategori_adet[cat]} adet.\n"
             
+        # 5. Genel Envanter Özeti
+        toplam_kalem = len(stoklar)
+        toplam_adet = sum(s.get('adet', 0) for s in stoklar)
+        db_context += f"\n### Genel Envanter Özeti:\n"
+        db_context += f"- Toplam {toplam_kalem} farklı kalem ürünümüz var. Depoda toplam {toplam_adet} adet mal bulunmaktadır.\n"
+
+        # 6. Tüm Stok Listesi (AI'nin spesifik sorulara doğru yanıt vermesi için)
+        db_context += "\n### Güncel Stok Listesi (Ürünler ve Adetleri):\n"
+        for s in stoklar:
+            db_context += f"- {s.get('ad')}: {s.get('adet', 0)} adet\n"
+
     except Exception as e:
         print(f"DB context error: {e}")
         
@@ -775,12 +796,11 @@ def ask_stok_question():
     
     system_prompt = (
         "Sen BulutAI, Bulutİş ERP sisteminin Stok ve Tedarik asistanısın. "
-        "Aşağıdaki sistem verilerine (varsa web arama sonuçlarına) dayanarak kullanıcının stoklarla ilgili sorusuna Türkçe, "
-        "net ve yönlendirici bir cevap ver.\n"
-        "ÖNEMLİ KURALLAR:\n"
-        "1. Eğer web arama sonucu varsa, piyasa fiyatları hakkında fikir ver ve fiyatın/bilginin hangi kaynak siteden alındığını açıkça (link vererek) belirt.\n"
-        "2. Eğer stok tahmini soruluyorsa, son çıkış hareketlerine bakarak tahmini bir bitme süresi söyle.\n"
-        "3. Kritik stokları listelemesi istendiyse listele ve 'Hemen sistemden sipariş verebilirsiniz' şeklinde yönlendir.\n"
+        "Aşağıdaki sistem verilerine (varsa web arama sonuçlarına) dayanarak kullanıcının stoklarla ilgili sorusuna Türkçe cevap ver.\n"
+        "ÇOK ÖNEMLİ KURALLAR (TOKEN TASARRUFU İÇİN):\n"
+        "1. SADECE VE SADECE kullanıcının sorduğu spesifik soruya yanıt ver. Ekstra açıklama, tavsiye veya genel özet kesinlikle ekleme.\n"
+        "2. Yanıtın olabildiğince kısa olsun (mümkünse tek bir cümle veya kelime öbeği). Uzun uzadıya yorum yapma.\n"
+        "3. Kullanıcı genel bir özet (tüm stok durumu) istemedikçe, genel envanter veya diğer ürünlerden bahsetme.\n"
         "4. Asla markdown biçimlendirmesi (###, **, *, ***, #, vb.) kullanma. Önemli kelimeleri <strong> </strong> arasına al.\n"
         "5. Satır başları veya listelemeler için direkt <br> veya <ul><li> etiketlerini kullan."
     )

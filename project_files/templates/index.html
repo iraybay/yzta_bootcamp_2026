@@ -56,6 +56,32 @@
                         <span class="profile-role">Yönetici</span>
                     </div>
                 </div>
+                
+                <style>
+                    .logout-btn {
+                        background: rgba(239, 68, 68, 0.15);
+                        color: #ef4444;
+                        padding: 8px 16px;
+                        border-radius: 50px;
+                        font-size: 13px;
+                        font-weight: 600;
+                        text-decoration: none;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        border: 1px solid rgba(239, 68, 68, 0.3);
+                        transition: all 0.3s ease;
+                        backdrop-filter: blur(5px);
+                        margin-left: 10px;
+                    }
+                    .logout-btn:hover {
+                        background: #ef4444;
+                        color: white;
+                        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+                        transform: translateY(-2px);
+                    }
+                </style>
+                <a href="/logout" class="logout-btn"><i class="fa-solid fa-power-off"></i> Çıkış Yap</a>
             </div>
         </header>
 
@@ -459,7 +485,7 @@ document.addEventListener("DOMContentLoaded", function() {
             this.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> BulutAI Analiz Ediyor...';
             
             ozetAlani.style.display = 'block';
-            ozetAlani.innerHTML = "<em>Son işlemler inceleniyor, lütfen bekleyin...</em>";
+            ozetAlani.innerHTML = "<em style='color: white;'>Son işlemler inceleniyor, lütfen bekleyin...</em>";
             
             try {
                 const response = await fetch('/api/ai2/finans-ozeti');
@@ -467,7 +493,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 
                 if(data.status === "success") {
                     const temizMetin = data.ozet.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    ozetAlani.innerHTML = "<strong style='color: #4b0082;'><i class='fa-solid fa-check-circle'></i> Yönetici Özeti:</strong><br><br>" + temizMetin;
+                    ozetAlani.innerHTML = "<strong style='color: white;'><i class='fa-solid fa-check-circle'></i> Yönetici Özeti:</strong><br><br><span style='color: white;'>" + temizMetin + "</span>";
                 } else {
                     ozetAlani.innerHTML = "<strong style='color: red;'>Hata:</strong> " + data.error;
                 }

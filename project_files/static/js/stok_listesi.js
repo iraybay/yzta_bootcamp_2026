@@ -131,13 +131,13 @@ let allStok = [];
                 const elHeader = document.getElementById('tableHeader');
                 if (elHeader) {
                     elHeader.innerHTML = `
-                        <th>Tarih</th>
-                        <th>Fiş No</th>
-                        <th>Ürün</th>
-                        <th>İşlem Tipi</th>
-                        <th>Miktar</th>
-                        <th>İrsaliye</th>
-                        <th>Açıklama</th>
+                        <th class="sortable">Tarih <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable">Fiş No <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable">Ürün <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable">İşlem Tipi <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable">Miktar <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable">İrsaliye <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable">Açıklama <i class="fa-solid fa-sort"></i></th>
                     `;
                 }
                 fetchHareketler();
@@ -152,15 +152,18 @@ let allStok = [];
                 const elHeader = document.getElementById('tableHeader');
                 if (elHeader) {
                     elHeader.innerHTML = `
-                        <th>ID</th>
-                        <th>Ürün Adı</th>
-                        <th>Kategori</th>
-                        <th>Stok Miktarı</th>
+                        <th class="sortable">ID <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable">Ürün Adı <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable">Kategori <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable">Mevcut Miktar <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable">Kritik Sev. <i class="fa-solid fa-sort"></i></th>
                         <th style="text-align: right;">İşlemler</th>
                     `;
                 }
                 filterData();
             }
+            
+            if (window.bindSortHeaders) window.bindSortHeaders();
         }
 
         function filterData() {
@@ -215,7 +218,7 @@ let allStok = [];
             tbody.innerHTML = '';
             list.forEach(item => {
                 const tr = document.createElement('tr');
-                const isCrit = item.adet < 10;
+                const isCrit = item.adet < (item.kritik_seviye || 10);
                 const adetClass = isCrit ? 'stok-warning' : 'stok-ok';
                 const warnIcon = isCrit ? '<i class="fa-solid fa-circle-exclamation" style="margin-left:6px;"></i>' : '';
                 
@@ -224,6 +227,7 @@ let allStok = [];
                     <td><strong style="color: var(--text-primary); font-size: 13px;">${item.ad}</strong></td>
                     <td><span class="badge-cat">${item.kategori || 'Genel'}</span></td>
                     <td><span class="${adetClass}" style="font-size:14px;">${item.adet}</span> ${warnIcon}</td>
+                    <td><span style="color: var(--text-secondary); font-size: 13px;">${item.kritik_seviye || 10}</span></td>
                     <td style="text-align: right;">
                         <button class="action-btn-sm" onclick="editStok(${item.id})"><i class="fa-solid fa-pen"></i> Düzenle</button>
                     </td>
@@ -316,6 +320,9 @@ let allStok = [];
                         
                         <label style="display: block; margin-bottom: 4px; font-weight:600;">Açılış Stok Miktarı</label>
                         <input id="swalAdet" type="number" class="swal2-input" style="width: 100%; box-sizing: border-box; margin: 0 0 12px 0; height: 40px;" value="0">
+
+                        <label style="display: block; margin-bottom: 4px; font-weight:600;">Kritik Stok Seviyesi</label>
+                        <input id="swalKritikSeviye" type="number" class="swal2-input" style="width: 100%; box-sizing: border-box; margin: 0 0 12px 0; height: 40px;" value="10" min="1">
                     </div>
                 `,
                 showCancelButton: true,
@@ -325,7 +332,8 @@ let allStok = [];
                     return {
                         ad: document.getElementById('swalUrunAd').value,
                         kategori: document.getElementById('swalKategori').value,
-                        adet: document.getElementById('swalAdet').value
+                        adet: document.getElementById('swalAdet').value,
+                        kritik_seviye: document.getElementById('swalKritikSeviye').value
                     }
                 }
             }).then(async (res) => {
@@ -452,6 +460,8 @@ let allStok = [];
                         <input id="swalUrunAd" class="swal2-input" style="width: 100%; box-sizing: border-box; margin: 0 0 12px 0; height: 40px;" value="${stok.ad}">
                         <label style="display: block; margin-bottom: 4px; font-weight:600;">Kategori</label>
                         <input id="swalKategori" class="swal2-input" style="width: 100%; box-sizing: border-box; margin: 0 0 12px 0; height: 40px;" value="${stok.kategori}">
+                        <label style="display: block; margin-bottom: 4px; font-weight:600;">Kritik Stok Seviyesi</label>
+                        <input id="swalKritikSeviye" type="number" class="swal2-input" style="width: 100%; box-sizing: border-box; margin: 0 0 12px 0; height: 40px;" value="${stok.kritik_seviye || 10}" min="1">
                     </div>
                 `,
                 showCancelButton: true,
@@ -461,7 +471,8 @@ let allStok = [];
                     return {
                         id: stok.id,
                         ad: document.getElementById('swalUrunAd').value,
-                        kategori: document.getElementById('swalKategori').value
+                        kategori: document.getElementById('swalKategori').value,
+                        kritik_seviye: document.getElementById('swalKritikSeviye').value
                     }
                 }
             }).then(async (res) => {
@@ -501,10 +512,12 @@ let allStok = [];
             const ratingDiv = document.getElementById('aiInsightRating');
             
             if (!isInitialReport) {
-                historyContainer.style.display = 'block';
+                historyContainer.style.display = 'flex';
+                historyContainer.style.flexDirection = 'column';
+                historyContainer.style.gap = '10px';
                 // Append user question
                 const userMsg = document.createElement('div');
-                userMsg.className = 'ai-chat-msg user';
+                userMsg.className = 'chat-bubble user';
                 userMsg.innerHTML = `<i class="fa-solid fa-user" style="opacity:0.7; font-size: 14px; margin-top:2px;"></i> <div style="flex:1;">${question}</div>`;
                 historyContainer.appendChild(userMsg);
             } else {
@@ -513,7 +526,7 @@ let allStok = [];
             
             // Append loading
             const loadingMsg = document.createElement('div');
-            loadingMsg.className = 'ai-chat-msg ai loading';
+            loadingMsg.className = 'chat-bubble ai loading';
             loadingMsg.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles fa-bounce" style="color:var(--primary-color); font-size: 14px; margin-top:2px;"></i> <div style="flex:1;">Analiz ediliyor, lütfen bekleyin...</div>`;
             
             if (!isInitialReport) {
@@ -549,16 +562,16 @@ let allStok = [];
                         reportContainer.style.display = 'block';
                     } else {
                         const aiMsg = document.createElement('div');
-                        aiMsg.className = 'ai-chat-msg ai';
+                        aiMsg.className = 'chat-bubble ai';
                         aiMsg.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary-color); font-size: 14px; margin-top:2px;"></i> <div style="flex:1; line-height:1.5;">${data.cevap.replace(/\n/g, '<br>')}</div>`;
                         historyContainer.appendChild(aiMsg);
                     }
                 } else {
                     if (!isInitialReport) {
                         const errMsg = document.createElement('div');
-                        errMsg.className = 'ai-chat-msg ai';
+                        errMsg.className = 'chat-bubble ai';
                         errMsg.style.color = '#ef4444';
-                        errMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <div>Hata: ${data.message}</div>`;
+                        errMsg.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> <div style="flex:1;">Hata: ${data.message}</div>`;
                         historyContainer.appendChild(errMsg);
                     }
                 }

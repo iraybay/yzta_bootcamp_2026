@@ -159,11 +159,12 @@ def api_stok_duzenle():
     stok_id = req.get('id')
     ad = req.get('ad')
     kategori = req.get('kategori', '')
+    kritik_seviye = req.get('kritik_seviye', 10)
     
     if not stok_id or not ad:
         return jsonify({"success": False, "message": "Geçersiz veriler"})
         
-    update_stok(stok_id, ad, kategori)
+    update_stok(stok_id, ad, kategori, kritik_seviye)
     return jsonify({"success": True, "message": "Ürün başarıyla güncellendi"})
 
 @main_bp.route('/api/stok/hareket-ekle', methods=['POST'])
