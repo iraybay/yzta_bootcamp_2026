@@ -28,11 +28,16 @@ Modüler mimari ile geliştirilen sistem; FastAPI tabanlı backend, SQLite verit
 Bulutİş'in amacı, işletmelerin finansal verilerini merkezi bir platformda yönetmelerini sağlamak ve yapay zekâ destekli analizlerle karar alma süreçlerini desteklemektir. Böylece manuel işlemler azaltılarak zaman tasarrufu sağlanması, finansal görünürlüğün artırılması ve işletmelerin daha doğru kararlar alabilmesi hedeflenmektedir.
 
 **Hedef Kitle:** 
-Küçük ve orta ölçekli işletmeler (KOBİ)
-Serbest çalışanlar (Freelancer)
-Mikro işletmeler
-Ön muhasebe süreçlerini dijitalleştirmek isteyen girişimler
-Finansal süreçlerini tek panelden yönetmek isteyen işletme sahipleri
+* Küçük ve orta ölçekli işletmeler (KOBİ)
+
+* Serbest çalışanlar (Freelancer)
+
+* Mikro işletmeler
+
+* Ön muhasebe süreçlerini dijitalleştirmek isteyen girişimler
+
+* Finansal süreçlerini tek panelden yönetmek isteyen işletme sahipleri
+
 
 **Final Product Beklentileri:** Akademi kriterlerine uygun, bünyesinde çoklu yapay zeka ajanları (AI Agents) ve hafıza yönetimi (RAG) barındıran çalışan bir uygulama.
 
