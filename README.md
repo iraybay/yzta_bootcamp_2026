@@ -11,9 +11,7 @@ Muhammed Furkan Koruyan (Product Owner/Developer) - [https://github.com/muhammed
 
 Ziya İpek (Developer) - [https://github.com/ziyaipek] | [https://www.linkedin.com/in/ziya-ipek/]
 
-Nisa Çibik (Developer) - [https://github.com/nisacibik] | [https://www.linkedin.com/in/nisacibik/]
-
-Merve Bayezit (Developer) - [https://www.linkedin.com/in/merve-bayezit/] | [https://github.com/Mervebayezit]
+Merve Bayezit - [https://www.linkedin.com/in/merve-bayezit/] | [https://github.com/Mervebayezit]
 
 ### 📝 Proje Tanıtımı
 
@@ -41,7 +39,7 @@ Finansal süreçlerini tek panelden yönetmek isteyen işletme sahipleri
 ### 1. Product Backlog:
 *   Proje yönetim sürecimizi ve beyin fırtınası aşamalarımızı Miro üzerinden başlattık. İlk sprint tamamen proje konusu bulma ve problem tespiti odaklı kurgulanmıştır.
  
-*   **Linki:** [https://miro.com/app/board/uXjVHA0FEf0=/]
+*   **Linki:** [https://miro.com/app/board/uXjVHA0FEf0=/?share_link_id=30117484818]
  
 *   <img width="969" height="495" alt="Ekran görüntüsü 2026-07-04 233842" src="https://github.com/user-attachments/assets/27be81db-ebc7-48b2-a196-e724386ee184" />
 
@@ -79,7 +77,7 @@ Sprint 2 boyunca tüm iş takibimizi, süreç yönetimimizi ve ekip arasındaki 
 
 *    Projedeki modüler yapıları (Cari, Raporlama, Kasa/Banka, Fatura, Stok ve BulutAI altyapısı) aşamalara bölerek süreç takibini bu pano üzerinden canlı olarak güncelledik.
   
-*   **Bağlantı Linki:** [https://miro.com/app/board/uXjVHA0FEf0=/] (aynı linkten süreç devam etmekte)
+*   **Linki:** [https://miro.com/app/board/uXjVHA0FEf0=/?share_link_id=30117484818
   
     <img width="985" height="615" alt="sprint2" src="https://github.com/user-attachments/assets/fb97cc50-d38a-4f04-9ded-e4ef036213f1" />
 
@@ -115,3 +113,51 @@ FastAPI backend mimarisine, SQLite veritabanına bağlı ve yapay zeka destekli 
 *   **Neyi İyileştirmemiz Gerekiyor?** Manuel test verisi (dummy data) üretmek vakit kaybettiriyor. İlerleyen süreçte veritabanı seeding işlemlerini otomatik hale getiren komutlar yazmalıyız.
 *   **Gelecek Sprintte Neyi Farklı Yapmalıyız?** Ekip olarak iletişimizi daha güçlü tutmalıyız.
 *   **Gelecek Planların Özeti (Backlog & Yapılacaklar Görevleri):** Öncelikli olarak Dashboard Geliştirme, Responsive Düzenlemeler, Kullanıcı Ayarları, Tema Desteği, Bildirim Sistemi ve Profil Ekranı tamamlanacaktır. Gelecek sprintlerde ise sistemimize AI Asistan geliştirmesi, Çoklu kullanıcı desteği, Yetkilendirme sistemi (rol yönetimi), Sistem loglama, Yedekleme sistemi ve Test senaryoları entegre edilecektir.
+
+
+
+SPRINT 3 (FİNAL) SÜREÇ DEĞERLENDİRMESİ
+
+
+
+### 1. Product Backlog
+*   **Kısa Açıklaması:** Projemizin final sprintinde de tüm iş takibimizi, süreç yönetimimizi ve görev paylaşımlarını Miro üzerindeki dijital Scrum/Kanban panomuzdan yürüttük. Final teslimi için gerekli olan AI Asistan entegrasyonu, yetkilendirme (Auth), loglama ve Dashboard geliştirmeleri gibi bitirilmesi gereken görevleri panomuzda güncelledik. Teslim tarihine kadar yetişmeyecek olan vizyon özelliklerini ise şeffaf bir proje yönetimi adına "Backlog" sütununa ayırdık.
+*   **Linki:** [https://miro.com/app/board/uXjVHA0FEf0=/?share_link_id=30117484818]
+
+  
+*   <img width="835" height="695" alt="sprint3" src="https://github.com/user-attachments/assets/79f3c74a-66a8-42b6-8574-76e64c6453c9" />
+
+
+### 2. Sprint Puanlaması
+*   **Puanlama Mantığı ve Ne Kadar Olduğu:** Sprint 3 panomuzda, sistemin çalışan bir ürün (MVP) haline gelmesi için tamamlanması elzem olan 11 adet kart (User Story ve Task) hedeflenmiştir. Önceki sprintlerdeki standartımızı koruyarak her bir göreve 10 puan atadık. Bu sprint için planlanan toplam geliştirme bütçemiz **110 Puan** olarak belirlenmiştir. Geriye kalan 5 vizyon kartı (50 Puan) ise gelecek fazlar için Backlog'da bırakılmıştır.
+*   **Ne Kadarı Tamamlandı:** Hedeflenen 11 görevin tamamı başarıyla "Bitenler" sütununa çekilmiştir. Final sprinti **110/110 puan** ile %100 tamamlanma oranıyla kapatılmıştır. 
+
+
+### 3. Daily Scrum Nasıl Yapıldı?
+*   **Nereden Görüşüldüğünün Açıklaması:** Ekip içi günlük senkronizasyonu ve anlık durum bildirimlerini ağırlıklı olarak **WhatsApp** ve **Slack** üzerinden yazılı olarak yürüttük. Ancak final sprinti olduğu için özellikle kod birleştirme (merge) aşamalarında, hata ayıklama (debug) süreçlerinde ve AI-Backend bağlantılarının testlerinde **Google Meet / Zoom** üzerinden toplantılar gerçekleştirdik.
+
+  
+*  <img width="910" height="349" alt="ekran" src="https://github.com/user-attachments/assets/2d9e785c-d0f6-4ccf-9414-866401ad2c80" />
+
+
+
+### 4. Ürün Geliştirme Durumu
+*   Bulutİş uygulaması "Çalışan Ürün" (MVP) hedefine başarıyla ulaşmıştır. Cari, Kasa, Banka, Fatura ve Stok modüllerinin tamamı birbirine entegre şekilde çalışmaktadır. Dashboard ekranında canlı finansal istatistikler ve grafikler kullanıcıya sunulmaktadır. Çoklu kullanıcı desteği (Auth) aktif edilmiş olup, sistemin en temel özelliği olan "BulutAI Asistanı", veritabanındaki (SQLite) güncel verileri analiz ederek mantıklı finansal tavsiyeler üretebilir duruma gelmiştir.
+
+    *  <img width="1899" height="940" alt="ekran1" src="https://github.com/user-attachments/assets/adb9ad44-4da1-44e4-8fed-8ed4532c1298" />
+
+
+### 5. Sprint Review 
+*   **Şimdiye Kadar Ne Yaptınız, Nelere Karar Verdiniz?**
+    *   Sistemin güvenliği için çoklu kullanıcı desteği ve yetkilendirme (Auth) altyapısı sisteme entegre edildi.
+    *   BulutAI asistanının ince ayarları (prompt tuning) yapıldı ve analiz yeteneği finansal modüllerle (Cari, Fatura, Kasa) tam uyumlu hale getirildi.
+    *   Grafik oluşturma kütüphaneleri (JS) Dashboard'a bağlanarak veri görselleştirmeleri sağlandı.
+    *   Kod tabanında sistem loglama ve veritabanı kurtarma/bakım scriptleri hazırlandı.
+    *   Zaman yönetimi ve proje gerçekçiliği açısından; Tema Desteği, Profil Ekranı, Bildirim Sistemi ve Kullanıcı Ayarları gibi kozmetik/ikincil özelliklerin bu sürümde kodlanmayıp Backlog için bekletilmesine karar verildi.
+
+
+### 6. Sprint Retrospective 
+*   **Neyi İyileştirmemiz Gerekiyor?** Yapay zeka entegrasyonu, bağlam (context) yönetimi ve arayüz responsive düzenlemeleri beklediğimizden daha fazla zaman aldı. Özellikle AI'ın yanlış bilgi üretmesini (halüsinasyon) engellemek için test süreçlerini otomatikleştirmemiz gerekliydi.
+*   **Gelecek Sprintte Neyi Farklı Yapmanız Gerekiyor? (Gelecek Vizyonu):** Projenin canlı ortama (production) alınması için lokaldeki SQLite veritabanı yerine, bulut tabanlı eşzamanlı bir veritabanı (Örn: PostgreSQL) mimarisine geçiş yapılmalıdır.
+*   **Yeni Yapılacak Planların Özeti:** Bootcamp sürecinin başarıyla tamamlanmasının ardından projenin yol haritasında (Backlog); Test Senaryolarının yazılması, Profil ve Kullanıcı Ayarları ekranlarının tasarlanması, Bildirim Sisteminin (Websocket) kurulması ve Otomatik Yedekleme servislerinin bulut sunuculara (AWS/GCP) entegre edilmesi bulunmaktadır.
+
