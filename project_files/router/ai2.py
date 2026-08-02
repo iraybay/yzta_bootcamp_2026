@@ -5,7 +5,7 @@ import sqlite3
 
 yapay_zeka_bp = Blueprint('yapay_zeka', __name__)
 
-@yapay_zeka_bp.route('/api/ai/finans-ozeti', methods=['GET'])
+@yapay_zeka_bp.route('/finans-ozeti', methods=['GET'])
 def finans_ozeti():
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
