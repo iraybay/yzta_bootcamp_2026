@@ -11,7 +11,9 @@ Muhammed Furkan Koruyan (Product Owner/Developer) - [https://github.com/muhammed
 
 Ziya İpek (Developer) - [https://github.com/ziyaipek] | [https://www.linkedin.com/in/ziya-ipek/]
 
-Merve Bayezit - [https://www.linkedin.com/in/merve-bayezit/] | [https://github.com/Mervebayezit]
+Merve Bayezit (Developer) - [https://www.linkedin.com/in/merve-bayezit/] | [https://github.com/Mervebayezit]
+
+Nisa Çibik - [https://www.linkedin.com/in/nisacibik/] | [https://github.com/nisacibik]
 
 ### 📝 Proje Tanıtımı
 
@@ -144,7 +146,16 @@ SPRINT 3 (FİNAL) SÜREÇ DEĞERLENDİRMESİ
 ### 4. Ürün Geliştirme Durumu
 *   Bulutİş uygulaması "Çalışan Ürün" (MVP) hedefine başarıyla ulaşmıştır. Cari, Kasa, Banka, Fatura ve Stok modüllerinin tamamı birbirine entegre şekilde çalışmaktadır. Dashboard ekranında canlı finansal istatistikler ve grafikler kullanıcıya sunulmaktadır. Çoklu kullanıcı desteği (Auth) aktif edilmiş olup, sistemin en temel özelliği olan "BulutAI Asistanı", veritabanındaki (SQLite) güncel verileri analiz ederek mantıklı finansal tavsiyeler üretebilir duruma gelmiştir.
 
-    *  <img width="1899" height="940" alt="ekran1" src="https://github.com/user-attachments/assets/adb9ad44-4da1-44e4-8fed-8ed4532c1298" />
+<img width="1280" height="832" alt="WhatsApp Image 2026-08-02 at 17 58 44" src="https://github.com/user-attachments/assets/00b49ffb-18bb-4e54-ba87-29d8c8498845" />
+
+
+<img width="1280" height="832" alt="WhatsApp Image 2026-08-02 at 17 58 44 (1)" src="https://github.com/user-attachments/assets/df1cd37e-8517-48e6-b215-b0ace85867bb" />
+
+
+<img width="1280" height="832" alt="WhatsApp Image 2026-08-02 at 17 58 45" src="https://github.com/user-attachments/assets/2974b24e-488a-48bf-8f61-4d79cdf43f60" />
+
+
+<img width="1280" height="832" alt="WhatsApp Image 2026-08-02 at 17 58 45 (1)" src="https://github.com/user-attachments/assets/0a51fc6e-bcac-412e-8a08-6a918a7f15ee" />
 
 
 ### 5. Sprint Review 
